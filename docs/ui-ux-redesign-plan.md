@@ -4,6 +4,8 @@ Status: implemented and validated, including the skill-guided revision on 2026-0
 
 This plan builds on [implementation-plan.md](implementation-plan.md) and [documentation-architecture-research.md](documentation-architecture-research.md). Their source ownership, reproducible build, independent versioning, and repository boundary requirements remain in effect.
 
+Follow-up requirements now implemented: visible ecosystem labels use **Projects**; referenced example files render as versioned documentation with local downloads; topic groups prioritize starting and operating tasks before development; header and comparison-column alignment have explicit browser checks. Details are in the revision report.
+
 ## 1. Goals and required architecture
 
 Create an appealing ecosystem website that helps new technical users understand the products, choose a starting point, and find dependable documentation.

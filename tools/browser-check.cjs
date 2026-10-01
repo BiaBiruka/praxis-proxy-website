@@ -71,9 +71,13 @@ const routes = [
             }
           }
           if (name==='how-to') {
-            assert.equal(await page.locator('.docs-sidebar-context').innerText(),'Praxis','Sidebar context should omit the redundant version');
+            assert.equal(await page.locator('.docs-sidebar-context').count(),0,'Sidebar should omit the redundant project/version line');
             const topics=await page.locator('.docs-sidebar-group').first().locator('.docs-sidebar-topic > span').allTextContents();
             assert(topics.indexOf('First Proxy')<topics.indexOf('Operating') && topics.indexOf('Operating')<topics.indexOf('Developing'),'Getting started and operations must precede development');
+          }
+          if (['overview','ai-overview','policy-overview'].includes(name)) {
+            const positions=await page.evaluate(()=>['h1','.site-page > article > p','.product-overview__intro','.product-visual'].map(selector=>document.querySelector(selector).getBoundingClientRect().left));
+            assert(positions.every(left=>Math.abs(left-positions[0])<=1),'Project heading, prose, actions, and diagram must share an alignment');
           }
           assert.equal(result.brokenImages.length,0,`${route} broken images: ${result.brokenImages}`);
           assert(result.scrollWidth <= width+1,`${route} ${theme} ${width}px overflow: ${result.scrollWidth}`);
@@ -89,6 +93,24 @@ const routes = [
         }
       }
     }
+    for (const width of [320,390,768,1440,1900]) {
+      await page.setViewportSize({width,height:1000});
+      await page.goto(base+'/praxis/');
+      for (const theme of ['dark','light']) {
+        await page.locator('#bd-theme').click();
+        const placement=await page.evaluate(()=>{
+          const button=document.querySelector('#bd-theme').getBoundingClientRect();
+          const menu=document.querySelector('.td-light-dark-menu .dropdown-menu').getBoundingClientRect();
+          return {buttonRight:button.right,menuLeft:menu.left,menuRight:menu.right};
+        });
+        assert(placement.menuLeft>=0 && placement.menuRight<=width+1,'Theme menu must fit the viewport');
+        assert(Math.abs(placement.menuRight-placement.buttonRight)<=8,'Theme menu must anchor to its button');
+        await page.locator(`.td-light-dark-menu [data-bs-theme-value="${theme}"]`).click();
+        await page.waitForFunction(value=>document.documentElement.dataset.bsTheme===value,theme);
+        assert.equal(await page.locator('.td-light-dark-menu .dropdown-menu.show').count(),0,'Theme selection must close its menu');
+      }
+    }
+    report.interactions.push('Theme menu anchors to its button and switches appearance at five widths');
     await page.setViewportSize({width:1440,height:1000});
     await page.goto(base+'/');
     await page.keyboard.press('Control+k');

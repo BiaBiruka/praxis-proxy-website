@@ -18,7 +18,6 @@
       <button class="btn btn-link td-sidebar__toggle" type="button" data-bs-toggle="collapse" data-bs-target="#td-section-nav" aria-controls="td-section-nav" aria-expanded="false" aria-label="Toggle section navigation"></button>
     </form>
     <nav class="td-sidebar-nav collapse foldable-nav" id="td-section-nav" aria-label="Documentation navigation">
-      <p class="docs-sidebar-context">{{ (index hugo.Data.docs_build_versions.products $productID).name }}</p>
       <ul class="td-sidebar-nav__section pe-md-3 ul-0">
         {{- range $startPages }}
         <li class="docs-sidebar-get-started{{ if eq .RelPermalink $page.RelPermalink }} active{{ end }}">

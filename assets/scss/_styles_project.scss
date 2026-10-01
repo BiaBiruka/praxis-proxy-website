@@ -116,6 +116,8 @@ body.guides-page #main-content .td-content { max-width: 48rem; min-width: 0; }
 .praxis-products-menu small { display: block; color: var(--praxis-muted); font-size: 0.875rem; }
 .td-navbar .td-navbar-container { display: flex; flex-wrap: wrap; align-items: center; }
 .praxis-navbar-tools { display: flex; align-items: center; gap: 0.2rem; margin-left: auto; }
+.praxis-navbar-tools .td-light-dark-menu { position: relative; }
+.praxis-navbar-tools .td-light-dark-menu .dropdown-menu { right: 0; left: auto; }
 .praxis-navbar-tools .td-navbar__light-dark-menu .nav-link { justify-content: center; min-width: 44px; min-height: 44px; padding: 0.5rem; }
 .praxis-navbar-tools .td-light-dark-menu .dropdown-menu button { min-height: 44px; }
 .praxis-navbar-toggle { display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; padding: 0.5rem; color: var(--praxis-text); }
@@ -224,8 +226,10 @@ body.guides-page #main-content .td-content { max-width: 48rem; min-width: 0; }
 .docs-directory-card li, .product-journeys li { margin: 0.35rem 0; }
 .docs-directory-card__forms { margin-top: auto; }
 
-.product-overview { max-width: 74rem; min-width: 0; margin: 0 auto; padding: 3rem 1.25rem 5rem; }
-.product-page-header { max-width: 74rem; margin: 0 auto; padding: 3rem 1.25rem 0; }
+.site-page > .product-overview-page { max-width: 74rem; min-width: 0; margin: 0 auto; padding: 3rem 1.25rem 5rem; }
+.site-page > .product-overview-page > p { max-width: 75ch; }
+.product-overview { min-width: 0; padding-top: 1.5rem; }
+.product-page-header { margin-bottom: 1.5rem; }
 .product-page-header h1 { margin: 0.5rem 0 0.7rem; font-size: clamp(2.25rem, 4.5vw, 3.5rem); }
 .product-page-header > p:last-child { max-width: 55ch; color: var(--praxis-muted); font-size: 1.18rem; }
 .product-overview-page .product-overview { padding-top: 1.5rem; }
@@ -300,7 +304,6 @@ body.guides-page #main-content .td-content { max-width: 48rem; min-width: 0; }
   --bs-tertiary-bg: var(--praxis-panel);
   --bs-secondary-bg-subtle: color-mix(in srgb, var(--praxis-accent) 10%, var(--praxis-panel));
 }
-.docs-sidebar-context { margin: 0.75rem 0; color: var(--praxis-muted); font-size: 0.9rem; }
 .docs-sidebar-get-started > a { display: block; margin: 0.25rem 0 0.7rem; padding: 0.55rem 0.75rem; border: 1px solid var(--praxis-border); border-left: 3px solid var(--praxis-accent); border-radius: 0.35rem; background: var(--praxis-panel); font-weight: 600; text-decoration: none; }
 .docs-sidebar-group { margin: 0.15rem 0; list-style: none; }
 #td-section-nav .docs-sidebar-group > input[type='checkbox'] { display: block; position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
