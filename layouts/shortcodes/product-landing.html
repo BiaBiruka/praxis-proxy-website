@@ -14,6 +14,8 @@
       <p>Default documentation: {{ $default.label }}</p>
       {{- if eq $id "praxis" -}}
       <p class="product-start-action"><a class="btn btn-primary" href="{{ "guides/first-proxy/" | relURL }}">Run your first proxy</a></p>
+      {{- else if eq $id "ai" -}}
+      <p class="product-start-action"><a class="btn btn-primary" href="{{ "ai/container-quickstart/" | relURL }}">Run Praxis AI</a></p>
       {{- else -}}{{- with index $startPages 0 -}}
       <p class="product-start-action"><a class="btn btn-primary" href="{{ .RelPermalink }}">Get started: {{ .Title }}</a></p>
       {{- end -}}{{- end -}}
@@ -47,7 +49,7 @@
         <h3 id="{{ $id }}-{{ $need | urlize }}">{{ if eq $need "How-to" }}How-to guides{{ else }}{{ $need }}{{ end }}</h3>
         <ul>
           {{- range $pages -}}
-          <li><a href="{{ .RelPermalink }}">{{ .Title }}</a>{{ with .Params.topic }}<span>{{ . }}</span>{{ end }}</li>
+          <li><a href="{{ .RelPermalink }}">{{ if eq .Params.source_path "docs/quickstart.md" }}Build from source{{ else }}{{ .Title }}{{ end }}</a>{{ with .Params.topic }}<span>{{ . }}</span>{{ end }}</li>
           {{- end -}}
         </ul>
       </section>

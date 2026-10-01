@@ -9,9 +9,9 @@ topic = "Configuration"
 
 Praxis applies filters to requests as they pass through a proxy. A filter is a named rule that can forward a request, change a header, or return a response. You choose and configure built-in filters in a YAML file; this does not require writing Rust.
 
-Each Praxis documentation link below shows the current default release. Use a binary built from that same Praxis release; {{< docs-link product="praxis" source="docs/quickstart.md" label="the quickstart" >}} explains how to build and run it.
+Configure built-in filters in YAML; no Rust code is needed. If you have not run Praxis yet, start with the [first reverse-proxy tutorial]({{< relref "first-proxy.md" >}}). Use the [developer path]({{< relref "extend/_index.md" >}}) for custom filters or features that require a source build.
 
-If you have not run Praxis yet, begin with the [first reverse-proxy tutorial]({{< relref "first-proxy.md" >}}). To adapt a full configuration for another task, browse the [versioned example catalog]({{< relref "../examples/_index.md" >}}).
+To adapt a full configuration for another task, browse the [versioned example catalog]({{< relref "../examples/_index.md" >}}).
 
 ## Choose a filter
 
@@ -26,14 +26,14 @@ A **backend** is the application service that receives a proxied request. A **ro
 
 ## Try a complete configuration
 
-You need a Praxis source checkout, Rust/Cargo, Make, and `curl`. If you already have a matching Praxis binary, skip `make release` and use its path in the commands below.
+You need Docker Engine and `curl`.
 
 This local example returns a response directly, without contacting a backend. Save it as `praxis.yaml`:
 
 ```yaml
 listeners:
   - name: local
-    address: "127.0.0.1:8080"
+    address: "0.0.0.0:8080"
     filter_chains: [main]
 
 filter_chains:
@@ -49,18 +49,21 @@ filter_chains:
 
 `listeners` sets the local address that accepts requests. The filter chain is the ordered list of rules for that listener. Here, `static_response` replies with status `200`, the message, and the `X-Praxis-Filter` header.
 
-From the Praxis source checkout for the release shown in the links above, build and check the config:
+Save the file as `praxis.yaml` and validate it:
 
-```console
-make release
-./target/release/praxis --validate --config praxis.yaml
-```
+{{< product-release product="praxis" >}}
+docker run --rm \
+  --volume "$PWD/praxis.yaml:/etc/praxis/config.yaml:ro" \
+  @IMAGE@ --validate
+{{< /product-release >}}
 
 Successful validation exits with status `0` and does not start the proxy. Then start it in one terminal:
 
-```console
-./target/release/praxis -c praxis.yaml
-```
+{{< product-release product="praxis" >}}
+docker run --rm --publish 127.0.0.1:8080:8080 \
+  --volume "$PWD/praxis.yaml:/etc/praxis/config.yaml:ro" \
+  @IMAGE@
+{{< /product-release >}}
 
 In another terminal, send a request:
 
@@ -70,7 +73,7 @@ curl -i http://127.0.0.1:8080/
 
 The response should have status `200`, include `X-Praxis-Filter: configured`, and contain `Filter configuration is active.` No separate backend is needed for this example.
 
-This listener is bound to the local machine. To forward requests to a real service instead, configure a `router` and `load_balancer` with that service’s address. Praxis blocks loopback, private-network, and link-local upstream addresses by default; the {{< docs-link product="praxis" source="docs/quickstart.md" label="quickstart" >}} explains the local-development opt-in and its security implications.
+The proxy listens on this machine at `127.0.0.1:8080`. To forward requests to a service, configure a `router` and `load_balancer` with its address. Praxis blocks loopback, private-network, and link-local upstream addresses by default; the {{< docs-link product="praxis" source="docs/quickstart.md" label="development quickstart" >}} explains the local-development opt-in and its security implications.
 
 ## Apply changes safely
 

@@ -2,7 +2,7 @@
   "products": {
     "praxis": {
       "name": "Praxis",
-      "description": "A configurable HTTP and TCP proxy with an extensible Rust framework.",
+      "description": "A configurable HTTP and TCP proxy for routing traffic and applying built-in filters.",
       "content_root": "docs",
       "default": "v0.7.2",
       "include": [

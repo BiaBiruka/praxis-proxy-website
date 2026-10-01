@@ -62,12 +62,14 @@ def main():
     expected_tasks = {next(x['url'] for x in sources if x['product'] == product
                            and x['version'] == default
                            and x['source_path'] == navigation['products'][product]['start'])
-                      for product, default in defaults.items() if product != 'praxis'}
+                      for product, default in defaults.items() if product not in {'praxis', 'ai'}}
     expected_tasks.add('/guides/first-proxy/')
+    expected_tasks.add('/ai/container-quickstart/')
     for route in ('index.html', 'start/index.html'):
         page = Page((public / route).read_text())
         assert set(page.task_links) == expected_tasks, f'{route}: missing task starting guide'
     for route in ('start', 'docs', 'search', 'community', 'examples', 'visual-guides',
+                  'ai/container-quickstart',
                   'guides/install', 'guides/first-proxy', 'guides/operate', 'guides/extend'):
         assert (public / route / 'index.html').is_file(), f'Missing /{route}/'
     custom = list((public / 'js').glob('praxis*.js')) + list((public / 'js').glob('flow-walkthrough*.js'))

@@ -3,7 +3,7 @@
 {{- $order := slice "praxis" "ai" "policy" -}}
 {{- $titles := dict "praxis" "Run an HTTP or TCP proxy" "ai" "Send requests to AI services" "policy" "Control access to tools and data" -}}
 {{- $descriptions := dict "praxis" "Choose where requests go and add header or security rules with built-in filters." "ai" "Route model and agent traffic through a gateway connected to AI providers." "policy" "Decide who can do what, pass identity between services, and limit data exposure." -}}
-{{- $prerequisites := dict "praxis" "Run the verified Linux/amd64 container, or build the selected source with Rust. The first proxy tutorial uses a local backend and explains the required development opt-in." "ai" "Builds with Rust/Cargo and Make. The quickstart uses an OpenAI API key and the gpt-4o model, with access to api.openai.com:443." "policy" "Requires Rust 1.92 or newer (install with rustup; the repository pins its toolchain). The quickstart walks through its included authorization and redaction scenario." -}}
+{{- $prerequisites := dict "praxis" "Docker Engine and curl. The first proxy tutorial forwards a request to a local backend." "ai" "Docker Engine, curl, and an OpenAI API key for requests to the live provider." "policy" "Requires Rust 1.92 or newer (install with rustup; the repository pins its toolchain). The quickstart walks through its included authorization and redaction scenario." -}}
 {{- $showPrerequisites := eq (.Get "prerequisites") "true" -}}
 <section class="home-section home-tasks" aria-labelledby="task-chooser-title">
   <div class="home-section__heading">
@@ -31,6 +31,8 @@
       {{- end }}
       {{- if eq $id "praxis" -}}
       <a class="task-card__action" href="{{ "guides/first-proxy/" | relURL }}">Run your first proxy <span aria-hidden="true">→</span></a>
+      {{- else if eq $id "ai" -}}
+      <a class="task-card__action" href="{{ "ai/container-quickstart/" | relURL }}">Run Praxis AI <span aria-hidden="true">→</span></a>
       {{- else -}}{{- with index $startPages 0 -}}
       <a class="task-card__action" href="{{ .RelPermalink }}">Get started: {{ .Title }} <span aria-hidden="true">→</span></a>
       {{- end -}}{{- end -}}

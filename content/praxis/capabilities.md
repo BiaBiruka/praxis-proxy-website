@@ -7,7 +7,7 @@ type = "guides"
 body_class = "product-overview-page"
 +++
 
-This page describes the **Praxis v0.7.2 default source build**, pinned to commit [`1de023cba3fee967f828c9ff35f27596f8f6792c`](https://github.com/praxis-proxy/praxis/tree/1de023cba3fee967f828c9ff35f27596f8f6792c). A custom build can omit defaults or add experimental features; check the binary's build and configuration before relying on a capability.
+This page describes the **Praxis v0.7.2 default release**, pinned to commit [`1de023cba3fee967f828c9ff35f27596f8f6792c`](https://github.com/praxis-proxy/praxis/tree/1de023cba3fee967f828c9ff35f27596f8f6792c). A custom build can omit defaults or add experimental features; check its build and configuration before relying on a capability.
 
 ## Protocols
 
@@ -40,4 +40,4 @@ Praxis v0.7.2 is pre-v1. Its [security policy](https://github.com/praxis-proxy/p
 
 Praxis v0.7.2 depends on Praxis Policy Engine crate v0.3.1. Praxis AI v0.4.1 independently depends on Praxis crates v0.7.0. The documentation catalog's Policy default is v0.4.0. These independent docs releases are not a tested compatibility matrix; use the dependency versions in the relevant manifests and test the exact builds you combine.
 
-Praxis is licensed under [Apache-2.0](https://github.com/praxis-proxy/praxis/blob/v0.7.2/LICENSE). The default source build uses Rust 1.96.0; the [installation guide]({{< relref "../guides/install.md" >}}) lists the native prerequisites.
+Praxis is licensed under [Apache-2.0](https://github.com/praxis-proxy/praxis/blob/v0.7.2/LICENSE). Building the v0.7.2 source requires Rust 1.96.0; see the [installation guide]({{< relref "../guides/install.md" >}}) if you need to build it.

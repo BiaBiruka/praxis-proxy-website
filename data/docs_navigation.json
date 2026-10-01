@@ -545,14 +545,14 @@
         },
         "docs/quickstart.md": {
           "source_path": "docs/quickstart.md",
-          "reader_need": "How-to",
-          "topic": "First Proxy",
+          "reader_need": "Tutorial",
+          "topic": "Developing",
           "related": [
             "docs/operating/configuration.md",
             "docs/architecture/overview.md"
           ],
           "order": 10,
-          "summary": "Build and run a proxy locally, then route a request to an upstream backend."
+          "summary": "Build Praxis from source for local development, then route a request to an upstream backend."
         },
         "docs/release.md": {
           "source_path": "docs/release.md",
@@ -1109,14 +1109,14 @@
         },
         "docs/quickstart.md": {
           "source_path": "docs/quickstart.md",
-          "reader_need": "How-to",
-          "topic": "AI Gateway",
+          "reader_need": "Tutorial",
+          "topic": "Developing",
           "related": [
             "docs/filters/reference.md",
             "docs/architecture/ai-inference.md"
           ],
           "order": 10,
-          "summary": "Build Praxis AI and route a Responses API request to a configured AI backend."
+          "summary": "Build Praxis AI from source for local development, then route a Responses API request to an AI backend."
         },
         "docs/release.md": {
           "source_path": "docs/release.md",

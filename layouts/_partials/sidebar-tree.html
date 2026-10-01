@@ -10,6 +10,14 @@
   {{- $exampleCatalogs := where $allDocs "Params.example_catalog" true -}}
   {{- $allDocs = where $allDocs "Params.topic" "ne" "Examples" -}}
   {{- $startPages := where $allDocs "Params.source_path" $navigation.start -}}
+  {{- $startHref := "" -}}
+  {{- if eq $productID "praxis" -}}
+    {{- $startHref = "guides/first-proxy/" | relURL -}}
+  {{- else if eq $productID "ai" -}}
+    {{- $startHref = "ai/container-quickstart/" | relURL -}}
+  {{- else -}}
+    {{- with index $startPages 0 -}}{{- $startHref = .RelPermalink -}}{{- end -}}
+  {{- end -}}
   {{- $misc := slice -}}
   {{- range $allDocs -}}
     {{- if or (eq .Params.reader_need "Overview") (eq .Params.reader_need "Release") -}}
@@ -23,9 +31,9 @@
     </form>
     <nav class="td-sidebar-nav collapse foldable-nav" id="td-section-nav" aria-label="Documentation navigation">
       <ul class="td-sidebar-nav__section pe-md-3 ul-0">
-        {{- range $startPages }}
-        <li class="docs-sidebar-get-started{{ if eq .RelPermalink $page.RelPermalink }} active{{ end }}">
-          <a href="{{ .RelPermalink }}"{{ if eq .RelPermalink $page.RelPermalink }} aria-current="page"{{ end }}>Get started</a>
+        {{- if and $startHref (ne $startHref $page.RelPermalink) }}
+        <li class="docs-sidebar-get-started{{ if eq $startHref $page.RelPermalink }} active{{ end }}">
+          <a href="{{ $startHref }}"{{ if eq $startHref $page.RelPermalink }} aria-current="page"{{ end }}>Get started</a>
         </li>
         {{- end }}
         {{- range $exampleCatalogs }}
@@ -56,7 +64,7 @@
                       <ul class="ul-2">
                         {{- range (.Pages.ByParam "order") }}
                           <li class="docs-sidebar-item{{ if eq .RelPermalink $page.RelPermalink }} active{{ end }}">
-                            <a href="{{ .RelPermalink }}"{{ if eq .RelPermalink $page.RelPermalink }} aria-current="page"{{ end }}>{{ .LinkTitle }}</a>
+          <a href="{{ .RelPermalink }}"{{ if eq .RelPermalink $page.RelPermalink }} aria-current="page"{{ end }}>{{ if eq .Params.source_path "docs/quickstart.md" }}Build from source{{ else }}{{ .LinkTitle }}{{ end }}</a>
                           </li>
                         {{- end }}
                       </ul>

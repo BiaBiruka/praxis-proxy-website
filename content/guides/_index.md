@@ -9,7 +9,7 @@ Start with a task you want to accomplish. These guides explain the settings, sho
 
 ## Run Praxis
 
-- [Install and run Praxis]({{< relref "install.md" >}}): choose the verified container or source build.
+- [Install and run Praxis]({{< relref "install.md" >}}): start with the release image; build from source for development or gated features.
 - [Run your first reverse proxy]({{< relref "first-proxy.md" >}}): forward a request to a local backend.
 
 ## Configure and operate

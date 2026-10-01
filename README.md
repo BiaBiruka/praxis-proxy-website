@@ -2,6 +2,8 @@
 
 One Hugo site publishes shared ecosystem pages and versioned docs from the Praxis, Praxis AI, and Policy repositories. Product source repositories remain authoritative; prepared Markdown and assets live only in ignored `.cache/` output.
 
+For documentation and website contributions, read [AGENTS.md](AGENTS.md) for source ownership, editorial and UI conventions, validation, and optional skill guidance.
+
 ## Requirements
 
 - Docker Engine with Docker Compose v2

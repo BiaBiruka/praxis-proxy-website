@@ -1,58 +1,40 @@
 +++
 title = "Run your first reverse proxy"
-description = "Build Praxis, configure one local upstream, and verify that a real request reaches it."
+description = "Run Praxis and forward a request through a real HTTP backend."
 type = "guides"
 body_class = "guides-page"
 reader_need = "Tutorial"
 topic = "First run"
 +++
 
-This tutorial builds Praxis v0.7.2, starts a tiny HTTP backend, then forwards a request through Praxis to that backend. You will configure the proxy in YAML; no Rust filter code is needed.
+Use Praxis to forward a request to a real HTTP backend. Configure its built-in `router` and `load_balancer` filters in YAML.
 
-You need the Rust 1.96.0 toolchain pinned by this release, Cargo, CMake 3.31 or newer, a C/C++ compiler, `pkg-config`, OpenSSL development headers, Python 3, and `curl`. See the [installation guide]({{< relref "install.md" >}}) for the source-build prerequisites and container notes.
+You need Docker Engine, `curl`, and an internet connection to pull the two images. The Praxis image listens on container port `8080`; the echo service listens on port `3000`.
 
-## Build Praxis
+## Start the echo service
 
-From a terminal, check out the selected release and build only the proxy binary:
-
-```console
-git clone https://github.com/praxis-proxy/praxis.git
-cd praxis
-git checkout v0.7.2
-cargo build --locked -p praxis-proxy
-```
-
-This builds the local debug binary for a quicker first run. For a release-mode binary, build with `cargo build --locked --release -p praxis-proxy` and use `./target/release/praxis` in the commands below.
-
-## Start a small backend
-
-In a second terminal on the same machine, create a response and serve it on port 3000:
+Create a Docker network so Praxis can reach the echo service by its container name:
 
 ```console
-mkdir -p /tmp/praxis-demo-backend
-printf 'hello from backend\n' > /tmp/praxis-demo-backend/index.html
-python3 -m http.server 3000 --bind 127.0.0.1 --directory /tmp/praxis-demo-backend
+docker network create praxis-quickstart
+docker run --detach --name praxis-echo \
+  --network praxis-quickstart \
+  registry.k8s.io/gateway-api/conformance/echo-basic:v0.1.0
 ```
 
-Leave that command running. In another terminal, confirm the backend directly:
+The echo service listens on port `3000` inside the network. It returns JSON describing the request it received.
 
-```console
-curl http://127.0.0.1:3000/
-```
+## Configure Praxis
 
-The response body should be `hello from backend`.
-
-## Configure the proxy
-
-From the Praxis source checkout, save this as `praxis.yaml`:
+Save this as `praxis.yaml` in your current directory:
 
 ```yaml
 insecure_options:
-  allow_private_endpoints: true
+  allow_private_upstreams: true
 
 listeners:
   - name: web
-    address: "127.0.0.1:8080"
+    address: "0.0.0.0:8080"
     filter_chains: [main]
 
 filter_chains:
@@ -66,37 +48,44 @@ filter_chains:
         clusters:
           - name: backend
             endpoints:
-              - "127.0.0.1:3000"
+              - "praxis-echo:3000"
 ```
 
-`router` matches the request path and chooses the named `backend` cluster. `load_balancer` selects an endpoint from that cluster. Praxis blocks loopback upstreams by default; `allow_private_endpoints` is required here because the backend is on the same machine. This opt-in is for this local tutorial, not a production setting.
+`router` matches the request path and selects the `backend` cluster. `load_balancer` connects to the echo container. Docker resolves `praxis-echo` to a private address, so this example enables the global runtime option `allow_private_upstreams`. `allow_private_endpoints` serves a separate config-validation check for literal or recognized private endpoint addresses and is not needed for this Docker hostname. Use the runtime opt-in only in development configurations that need private upstreams.
 
-## Validate, start, and send a request
+## Validate and run the proxy
 
-Validate the file before starting the listener:
+Check the configuration before starting Praxis:
 
-```console
-./target/debug/praxis --validate --config praxis.yaml
-```
+{{< product-release product="praxis" >}}
+docker run --rm --network praxis-quickstart \
+  --volume "$PWD/praxis.yaml:/etc/praxis/config.yaml:ro" \
+  @IMAGE@ --validate
+{{< /product-release >}}
 
-If validation exits successfully, start Praxis:
+Start Praxis and publish its HTTP listener on your machine:
 
-```console
-./target/debug/praxis --config praxis.yaml
-```
+{{< product-release product="praxis" >}}
+docker run --rm --name praxis-proxy \
+  --network praxis-quickstart \
+  --publish 127.0.0.1:8080:8080 \
+  --volume "$PWD/praxis.yaml:/etc/praxis/config.yaml:ro" \
+  @IMAGE@
+{{< /product-release >}}
 
-From a third terminal, send a request through the proxy:
+In another terminal, send a request:
 
 ```console
 curl -i http://127.0.0.1:8080/
 ```
 
-You should receive HTTP status `200` and the body `hello from backend`. The backend terminal should log a `GET /` request. This confirms that the request reached the configured upstream through Praxis.
+The response should have HTTP status `200` and a JSON body that includes the request method `GET` and path `/`. The echo service reports the request it received; values such as host and pod name depend on your Docker environment.
 
-Stop both servers with Ctrl+C. Remove the temporary backend directory if you no longer need it:
+Stop Praxis with Ctrl+C, then remove the echo service and network:
 
 ```console
-rm -rf /tmp/praxis-demo-backend
+docker rm --force praxis-echo
+docker network rm praxis-quickstart
 ```
 
-Next, [choose and configure built-in filters]({{< relref "use-filters.md" >}}), browse the [versioned configuration examples]({{< relref "../examples/_index.md" >}}), or continue to [operator tasks]({{< relref "operate/_index.md" >}}). For exact filter fields, {{< docs-link product="praxis" source="docs/filters/reference.md" label="use the v0.7.2 filter reference" >}}.
+Next, [configure built-in filters]({{< relref "use-filters.md" >}}), browse the [versioned configuration examples]({{< relref "../examples/_index.md" >}}), or continue to [operator tasks]({{< relref "operate/_index.md" >}}). For exact fields, {{< docs-link product="praxis" source="docs/filters/reference.md" label="use the filter reference" >}}.

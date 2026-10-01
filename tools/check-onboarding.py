@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
-"""Run the website's first proxy tutorial with a supplied selected-release binary."""
+"""Check the first proxy tutorial with a selected-release binary or image."""
 import argparse
+import json
 import re
 import subprocess
 import tempfile
@@ -30,26 +31,48 @@ def main():
     config = re.search(r'```yaml\n(.*?)\n```', tutorial, re.S).group(1) + '\n'
     with tempfile.TemporaryDirectory(prefix='praxis-tutorial-') as directory:
         work = Path(directory)
-        (work / 'index.html').write_text('hello from backend\n')
         config_path = work / 'praxis.yaml'
         config_path.write_text(config)
+        network = work.name
+        echo_container = f'{network}-echo'
+        proxy_container = f'{network}-proxy'
+
         def command(path):
             if binary:
                 return [binary, '--config', str(path)]
-            return ['docker', 'run', '--rm', '--name', work.name, '--network', 'host',
+            return ['docker', 'run', '--rm', '--name', proxy_container,
+                    '--network', network, '--publish', '127.0.0.1:8080:8080',
                     '--mount', f'type=bind,source={path},target=/etc/praxis/config.yaml,readonly', args.image]
-        subprocess.run(command(config_path) + ['--validate'], check=True)
-        denied = work / 'private-endpoints-disabled.yaml'
-        denied.write_text(config.replace('allow_private_endpoints: true', 'allow_private_endpoints: false'))
-        rejection = subprocess.run(command(denied) + ['--validate'], capture_output=True)
-        assert rejection.returncode != 0, 'Loopback upstream should need the tutorial opt-in'
+
+        endpoint = re.compile(r'("?)praxis-echo:3000("?)')
+        assert endpoint.search(config), 'Tutorial config must point to praxis-echo:3000'
+        if binary:
+            config = endpoint.sub(r'\g<1>127.0.0.1:3000\g<2>', config)
+        config_path.write_text(config)
+
         processes = []
         try:
+            subprocess.run(['docker', 'network', 'create', network], check=True,
+                           stdout=subprocess.DEVNULL)
+            subprocess.run(['docker', 'run', '--detach', '--name', echo_container,
+                            '--network', network, '--network-alias', 'praxis-echo',
+                            '--publish', '127.0.0.1:3000:3000',
+                            'registry.k8s.io/gateway-api/conformance/echo-basic:v0.1.0'],
+                           check=True, stdout=subprocess.DEVNULL)
+
+            if binary:
+                validate = command(config_path) + ['--validate']
+            else:
+                validate = ['docker', 'run', '--rm', '--network', network,
+                            '--mount', f'type=bind,source={config_path},target=/etc/praxis/config.yaml,readonly',
+                            args.image, '--validate']
+            subprocess.run(validate, check=True)
+
+            assert re.search(r'(?m)^\s+allow_private_upstreams: true\s*$', config), (
+                'Tutorial must enable runtime private-upstream access for the Docker echo service'
+            )
+
             with (work / 'servers.log').open('w+') as log:
-                processes.append(subprocess.Popen([
-                    'python3', '-m', 'http.server', '3000', '--bind', '127.0.0.1',
-                    '--directory', directory,
-                ], stdout=log, stderr=log))
                 processes.append(subprocess.Popen(command(config_path), stdout=log, stderr=log))
                 for _ in range(50):
                     if any(p.poll() is not None for p in processes):
@@ -62,12 +85,17 @@ def main():
                         time.sleep(0.1)
                 else:
                     raise AssertionError('Proxy did not become ready')
-                assert status == 200 and body == b'hello from backend\n', (status, body)
-                assert request('http://127.0.0.1:3000/') == (200, body)
-                print(f'Onboarding passed: {version}; validation, forwarded HTTP 200/body, and private-endpoint guard')
+                response = json.loads(body)
+                assert status == 200 and response.get('method') == 'GET' and response.get('path') == '/', (status, response)
+                backend_status, backend_body = request('http://127.0.0.1:3000/')
+                backend_response = json.loads(backend_body)
+                assert backend_status == 200 and backend_response.get('method') == 'GET' and backend_response.get('path') == '/', (backend_status, backend_response)
+                print(f'Onboarding passed: {version}; validation, runtime private-upstream opt-in, and forwarded HTTP 200/body')
         finally:
             if args.image:
-                subprocess.run(['docker', 'stop', '--time', '1', work.name], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                subprocess.run(['docker', 'rm', '--force', proxy_container], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            subprocess.run(['docker', 'rm', '--force', echo_container], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            subprocess.run(['docker', 'network', 'rm', network], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             for process in processes:
                 process.terminate()
             for process in processes:

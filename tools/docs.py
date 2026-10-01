@@ -440,7 +440,14 @@ def example_page_description(context: ExampleContext, source_path: str, content:
             intro += "\n**Prerequisites:** " + "; ".join(details["prerequisites"]) + "\n"
         if details["outcome"]:
             intro += f"\n**Expected outcome:** {details['outcome']}\n"
-        intro += "\nThe catalog preserves the pinned source file. Its presence here does not mean this configuration was executed or that external services are bundled.\n"
+        if context.product in {"praxis", "ai"} and context.version != "dev" and not example_requires_custom_build(content):
+            quickstart_href = "/guides/first-proxy/" if context.product == "praxis" else "/ai/container-quickstart/"
+            quickstart_label = "first reverse-proxy tutorial" if context.product == "praxis" else "container quickstart"
+            image_tag = next(release["tag"] for release in context.config["releases"]
+                             if release["version"] == context.version).removeprefix("v")
+            image = f"ghcr.io/praxis-proxy/{context.product}:{image_tag}"
+            intro += f"\n**Run it:** Use `{image}` and follow the [{quickstart_label}]({quickstart_href}) to mount and start the configuration.\n"
+        intro += "\nThis configuration comes from the selected release. The example has not been run here; external services are not bundled.\n"
         return details["title"], details["summary"], intro, example_resources(content, source_path, context.known_paths)
     title = PurePosixPath(source_path).stem.replace("-", " ").replace("_", " ").title()
     group = PurePosixPath(source_path).parent.name.replace("-", " ")
@@ -448,6 +455,36 @@ def example_page_description(context: ExampleContext, source_path: str, content:
     if len(summary) < 20:
         summary = f"{summary} Example source for {context.config['name']}."
     return title, summary, "This file is copied from the selected source snapshot.\n", set()
+
+
+def example_requires_custom_build(content: bytes) -> bool:
+    text = content.decode("utf-8", "replace")
+    return bool(re.search(r"--features\b|compile[- ]time", text, re.I))
+
+
+def hide_default_build_commands(text: str) -> str:
+    lines = text.splitlines()
+    result = []
+    index = 0
+    while index < len(lines):
+        if lines[index].strip().lower() == "# usage:":
+            end = index + 1
+            while end < len(lines) and lines[end].strip():
+                end += 1
+            block = lines[index:end]
+            if any(re.search(r"\bcargo (?:run|build)\b", line) for line in block):
+                index = end + (end < len(lines))
+                continue
+        if re.search(r"^\s*#.*\bcargo (?:run|build)\b", lines[index]):
+            continuation = lines[index].rstrip().endswith("\\")
+            index += 1
+            while continuation and index < len(lines) and re.match(r"^\s*#\s{2,}\S", lines[index]):
+                continuation = lines[index].rstrip().endswith("\\")
+                index += 1
+            continue
+        result.append(lines[index])
+        index += 1
+    return "\n".join(result) + ("\n" if text.endswith("\n") else "")
 
 
 def copy_example_companions(context: ExampleContext, source_path: str, resources: set[str]) -> list[str]:
@@ -464,8 +501,10 @@ def copy_example_companions(context: ExampleContext, source_path: str, resources
 
 
 def example_page_body(source_path: str, content: bytes, intro: str,
-                      download: str, companion_links: list[str]) -> str:
+                      download: str, companion_links: list[str], *, show_container: bool) -> str:
     text = content.decode("utf-8", "replace")
+    if show_container:
+        text = hide_default_build_commands(text)
     fence_length = max((len(match.group(0)) for match in re.finditer(r"`+", text)), default=2) + 1
     fence = "`" * max(3, fence_length)
     body = intro + f"\nDownload the [source file]({download})."
@@ -517,7 +556,11 @@ def write_example_page(context: ExampleContext, source_path: str, content: bytes
     download_file.parent.mkdir(parents=True, exist_ok=True)
     download_file.write_bytes(content)
     companions = copy_example_companions(context, source_path, resources)
-    page_body = example_page_body(source_path, content, intro, f"/{download_path}", companions)
+    page_body = example_page_body(
+        source_path, content, intro, f"/{download_path}", companions,
+        show_container=(context.product in {"praxis", "ai"} and context.version != "dev"
+                        and not example_requires_custom_build(content)),
+    )
     metadata = example_page_frontmatter(context, source_path, output_path, order, title, summary, details)
     destination = DOCS_OUT / product / version / output_path
     destination.parent.mkdir(parents=True, exist_ok=True)
