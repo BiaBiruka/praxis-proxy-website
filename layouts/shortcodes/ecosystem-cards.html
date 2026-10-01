@@ -1,0 +1,28 @@
+{{- $products := hugo.Data.docs_build_versions.products -}}
+{{- $order := slice "praxis" "ai" "policy" -}}
+<section class="home-section home-products" aria-labelledby="home-products-title">
+  <div class="home-section__heading">
+    <p class="home-section__eyebrow">The ecosystem</p>
+    <h2 id="home-products-title">One ecosystem, three independent projects</h2>
+    <p>Choose a framework, an AI gateway, a policy runtime, or an optional combination. Their releases are managed separately.</p>
+  </div>
+  <div class="product-overview-list">
+    {{- range $id := $order -}}
+      {{- $product := index $products $id -}}
+      {{- $default := index (where $product.versions "slug" $product.default) 0 -}}
+      {{- $icon := resources.Get (printf "icons/product-%s.svg" $id) -}}
+      <article class="product-overview-row product-overview-row--{{ $id }}">
+        <div class="product-overview-row__identity">
+          <img src="{{ $icon.RelPermalink }}" alt="" width="48" height="48">
+          <h3><a href="{{ printf "/%s/" $id | relURL }}">{{ $product.name }}</a></h3>
+        </div>
+        <p class="product-overview-row__description">{{ $product.description }}</p>
+        <div class="product-overview-row__meta">
+          <span class="product-badge">Docs {{ $default.label }}</span>
+          {{- with $product.status }}<p class="product-overview-row__status">{{ . }}</p>{{ end -}}
+        </div>
+        <a class="product-overview-row__action" href="{{ printf "/%s/" $id | relURL }}">Explore {{ $product.name }} <span aria-hidden="true">→</span></a>
+      </article>
+    {{- end -}}
+  </div>
+</section>

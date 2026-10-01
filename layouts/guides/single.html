@@ -1,0 +1,21 @@
+{{ define "main" }}
+<div class="container py-5">
+  <article class="td-content mx-auto">
+    <header>
+      <h1>{{ .Title }}</h1>
+      {{ with .Description }}<p class="lead">{{ . }}</p>{{ end }}
+    </header>
+    {{- $toc := .TableOfContents -}}
+    {{- if and (not .Params.notoc) $toc (ne $toc `<nav id="TableOfContents"></nav>`) }}
+    <details class="docs-mobile-toc">
+      <summary>On this page</summary>
+      {{ $toc }}
+    </details>
+    {{- end }}
+    {{ .Content }}
+    <footer class="mt-5 pt-4 border-top">
+      {{ partial "landing-contribution.html" . }}
+    </footer>
+  </article>
+</div>
+{{ end }}

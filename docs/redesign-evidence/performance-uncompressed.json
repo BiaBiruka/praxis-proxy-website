@@ -1,0 +1,28 @@
+{
+  "profile": {
+    "width": 390,
+    "height": 844,
+    "cpuRate": 4,
+    "latencyMs": 150,
+    "downloadBytesPerSecond": 200000,
+    "cache": "disabled",
+    "runs": 3
+  },
+  "results": [
+    {
+      "lcp": 3492,
+      "cls": 0,
+      "resources": 15
+    },
+    {
+      "lcp": 3460,
+      "cls": 0,
+      "resources": 15
+    },
+    {
+      "lcp": 3468,
+      "cls": 0,
+      "resources": 15
+    }
+  ]
+}

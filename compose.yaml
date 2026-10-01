@@ -1,0 +1,21 @@
+services:
+  website:
+    build:
+      context: .
+    working_dir: /project
+    volumes:
+      - .:/project
+      - npm-modules:/project/node_modules
+    ports:
+      - "1313:1313"
+    environment:
+      HOME: /tmp
+      GOMODCACHE: /project/.cache/go/pkg/mod
+      GOPATH: /project/.cache/go
+      GOCACHE: /project/.cache/go/build
+      HUGO_CACHEDIR: /project/.cache/hugo
+      npm_config_cache: /project/.cache/npm
+      HUGO_BASEURL: ${HUGO_BASEURL:-https://praxis-proxy.github.io/}
+
+volumes:
+  npm-modules:

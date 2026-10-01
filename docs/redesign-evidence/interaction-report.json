@@ -1,0 +1,25 @@
+{
+  "browser": "154.0.8037.92",
+  "matrix": [],
+  "accessibility": [
+    {
+      "name": "open-search",
+      "theme": "light",
+      "width": 1440,
+      "findings": []
+    }
+  ],
+  "interactions": [
+    "Search shortcut, actual results, Escape and focus restore",
+    "Documentation search defaults to current product/version",
+    "Shareable search URL and documentation-form filtering",
+    "Version switch preserves corresponding page and archive notice",
+    "Code copy to clipboard",
+    "Mermaid rendering, enlargement, theme/scroll preservation",
+    "Mobile menu, visible search/appearance, docs drawer and TOC",
+    "Mobile source actions",
+    "Unavailable search, retry recovery, empty state, additional results",
+    "Missing version counterpart opens overview with visible explanation"
+  ],
+  "errors": []
+}

@@ -1,0 +1,152 @@
+{
+  "products": {
+    "praxis": {
+      "name": "Praxis",
+      "description": "A Rust framework for building proxy servers.",
+      "content_root": "docs",
+      "default": "v0.7.2",
+      "include": [
+        "docs/README.md",
+        "docs/quickstart.md",
+        "docs/features.md",
+        "docs/architecture/**",
+        "docs/operating/**",
+        "docs/filters/**",
+        "docs/benchmarks.md",
+        "docs/release.md",
+        "docs/developing/adding-filters.md",
+        "docs/developing/adding-protocols.md",
+        "docs/developing/conventions.md",
+        "docs/developing/dependencies.md",
+        "docs/developing/getting-started.md",
+        "docs/developing/type-design.md"
+      ],
+      "required": [
+        "docs/README.md",
+        "docs/quickstart.md",
+        "docs/features.md",
+        "docs/filters/reference.md"
+      ],
+      "indexes": [
+        "docs/README.md",
+        "docs/filters/README.md"
+      ],
+      "releases": [
+        {
+          "version": "v0.7.2",
+          "label": "v0.7.2",
+          "tag": "v0.7.2",
+          "sha": "1de023cba3fee967f828c9ff35f27596f8f6792c",
+          "default": true
+        },
+        {
+          "version": "v0.7.1",
+          "label": "v0.7.1",
+          "tag": "v0.7.1",
+          "sha": "1c782fcaa2bc6ebc5276994e279f53727bc878c4",
+          "default": false
+        },
+        {
+          "version": "v0.5.4",
+          "label": "v0.5.4",
+          "tag": "v0.5.4",
+          "sha": "12ee8b430af498ca0a9f5066f61716d8c0a9fc94",
+          "default": false
+        },
+        {
+          "version": "v0.5.3",
+          "label": "v0.5.3",
+          "tag": "v0.5.3",
+          "sha": "7c6cef76a9b8449c3617dacfa597ee6d7ac9d82e",
+          "default": false
+        }
+      ]
+    },
+    "ai": {
+      "name": "Praxis AI",
+      "description": "An AI gateway built on the Praxis proxy runtime.",
+      "content_root": "docs",
+      "default": "v0.4.1",
+      "status": "Praxis AI is alpha software; APIs and configuration may change before v1.0.0.",
+      "include": [
+        "docs/README.md",
+        "docs/quickstart.md",
+        "docs/features.md",
+        "docs/architecture/**",
+        "docs/filters/**",
+        "docs/anthropic-messages.md",
+        "docs/conformance/openresponses-translation.md",
+        "docs/developing/adding-filters.md",
+        "docs/developing/cli-vllm-through-praxis.md",
+        "docs/developing/fips.md",
+        "docs/developing/getting-started.md",
+        "docs/developing/type-design.md",
+        "docs/fips.md",
+        "docs/release.md",
+        "docs/store/schema-migration.md"
+      ],
+      "required": [
+        "docs/README.md",
+        "docs/quickstart.md",
+        "docs/features.md",
+        "docs/filters/reference.md"
+      ],
+      "indexes": [
+        "docs/README.md",
+        "docs/filters/README.md"
+      ],
+      "releases": [
+        {
+          "version": "v0.4.1",
+          "label": "v0.4.1 (alpha)",
+          "tag": "v0.4.1",
+          "sha": "b9d6016764888e02dc049ec088496b10b7e886c1",
+          "default": true
+        },
+        {
+          "version": "v0.4.0",
+          "label": "v0.4.0 (alpha)",
+          "tag": "v0.4.0",
+          "sha": "ca3e760c790a34293c03d2314a3c7cfbf73836b3",
+          "default": false
+        }
+      ]
+    },
+    "policy": {
+      "name": "Praxis Policy Engine",
+      "description": "A policy runtime for authorization, identity, delegation, and data controls.",
+      "content_root": "docs/content",
+      "default": "v0.4.0",
+      "status": "The public API is still evolving; breaking changes are documented in the changelog.",
+      "include": [
+        "docs/content/**",
+        "docs/images/**"
+      ],
+      "required": [
+        "docs/content/index.md",
+        "docs/content/quickstart.md",
+        "docs/content/apl/index.md"
+      ],
+      "indexes": [
+        "docs/content/index.md",
+        "docs/content/apl/index.md"
+      ],
+      "releases": [
+        {
+          "version": "v0.4.0",
+          "label": "v0.4.0",
+          "tag": "v0.4.0",
+          "sha": "fb94b2b81e5909b72949323921625de7ba7ce328",
+          "default": true
+        },
+        {
+          "version": "v0.3.1",
+          "label": "v0.3.1",
+          "tag": "v0.3.1",
+          "sha": "90e7f23c7d41e83f65f4c02cb18822fcd0024123",
+          "default": false
+        }
+      ]
+    }
+  }
+}

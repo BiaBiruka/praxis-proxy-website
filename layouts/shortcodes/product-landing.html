@@ -1,0 +1,39 @@
+{{- $id := .Get "product" -}}
+{{- $product := index hugo.Data.docs_build_versions.products $id -}}
+{{- $default := index (where $product.versions "slug" $product.default) 0 -}}
+{{- $nav := index hugo.Data.docs_navigation.products $id -}}
+{{- $productPages := where (where site.RegularPages "Params.product" $id) "Params.version" $product.default -}}
+{{- $startPages := where $productPages "Params.source_path" $nav.start -}}
+{{- $icon := resources.Get (printf "icons/product-%s.svg" $id) -}}
+{{- $needs := slice "How-to" "Tutorial" "Reference" "Explanation" -}}
+<section class="product-overview" aria-label="{{ $product.name }} project overview">
+  <div class="product-overview__intro">
+    <div class="product-overview__copy">
+      <p class="product-eyebrow">{{ $product.name }} · default documentation {{ $default.label }}</p>
+      {{- with index $startPages 0 -}}
+      <p class="product-start-action"><a class="btn btn-primary" href="{{ .RelPermalink }}">Get started: {{ .Title }}</a></p>
+      {{- end -}}
+      {{- with $product.status }}<p class="product-status">{{ . }}</p>{{ end -}}
+    </div>
+    <img class="product-overview__icon" src="{{ $icon.RelPermalink }}" alt="" width="80" height="80">
+  </div>
+  {{ partial "product-visual.html" (dict "productID" $id) }}
+  <section class="product-journeys" aria-labelledby="{{ $id }}-journeys-title">
+    <h2 id="{{ $id }}-journeys-title">Choose what you need</h2>
+    {{- range $need := $needs -}}
+      {{- $pages := where $productPages "Params.reader_need" $need -}}
+      {{- $pages = first 3 (sort $pages "Params.order") -}}
+      {{- if gt (len $pages) 0 -}}
+      <section class="product-journey-group" aria-labelledby="{{ $id }}-{{ $need | urlize }}">
+        <h3 id="{{ $id }}-{{ $need | urlize }}">{{ if eq $need "How-to" }}How-to guides{{ else }}{{ $need }}{{ end }}</h3>
+        <ul>
+          {{- range $pages -}}
+          <li><a href="{{ .RelPermalink }}">{{ .Title }}</a>{{ with .Params.topic }}<span>{{ . }}</span>{{ end }}</li>
+          {{- end -}}
+        </ul>
+      </section>
+      {{- end -}}
+    {{- end -}}
+  </section>
+  <p class="product-links"><a href="{{ $product.repo }}">Source repository</a><a href="{{ $product.issues }}">Report an issue</a><a href="{{ printf "/%s/%s/" $id $product.default | relURL }}">Browse {{ $default.label }} documentation</a></p>
+</section>

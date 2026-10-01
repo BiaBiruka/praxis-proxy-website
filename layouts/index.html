@@ -1,0 +1,22 @@
+{{ define "main" }}
+<div class="praxis-home">
+  <section class="home-hero" aria-labelledby="home-title">
+    <div class="home-hero__copy">
+      <h1 id="home-title">Build, route, and govern application traffic.</h1>
+      <p class="home-hero__lede">Route application requests, connect AI providers, and decide who can access what. Use each project on its own or combine them.</p>
+      <div class="home-hero__actions">
+        <a class="btn btn-primary" href="{{ "start/" | relURL }}">Get started</a>
+        <a class="btn btn-outline-primary" href="{{ "docs/" | relURL }}">Browse documentation</a>
+      </div>
+    </div>
+    <figure class="home-diagram">
+      <div class="home-diagram__scroll">
+        <img src="{{ "images/ecosystem.svg" | relURL }}" alt="Praxis is a proxy framework; Praxis AI is an optional gateway built on it; Policy is an independent runtime for optional enforcement integrations." width="840" height="360">
+      </div>
+      <figcaption>Choose the components that fit your system. Projects are released independently and do not imply a tested compatibility combination.</figcaption>
+    </figure>
+  </section>
+  {{ .Content }}
+  {{ partial "landing-contribution.html" . }}
+</div>
+{{ end }}

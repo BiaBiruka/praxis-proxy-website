@@ -1,0 +1,49 @@
+{{- $products := hugo.Data.docs_build_versions.products -}}
+{{- $navigation := hugo.Data.docs_navigation.products -}}
+{{- $order := slice "praxis" "ai" "policy" -}}
+{{- $titles := dict "praxis" "Configure proxy behavior" "ai" "Send requests to AI services" "policy" "Control access to tools and data" -}}
+{{- $descriptions := dict "praxis" "Choose where requests go and add header or security rules with built-in filters." "ai" "Route model and agent traffic through a gateway connected to AI providers." "policy" "Decide who can do what, pass identity between services, and limit data exposure." -}}
+{{- $prerequisites := dict "praxis" "Builds with Rust/Cargo and Make. The proxy example uses an upstream at 127.0.0.1:3000; the quickstart explains the opt-in required when that backend is local." "ai" "Builds with Rust/Cargo and Make. The quickstart uses an OpenAI API key and the gpt-4o model, with access to api.openai.com:443." "policy" "Requires Rust 1.92 or newer (install with rustup; the repository pins its toolchain). The quickstart walks through its included authorization and redaction scenario." -}}
+{{- $showPrerequisites := eq (.Get "prerequisites") "true" -}}
+<section class="home-section home-tasks" aria-labelledby="task-chooser-title">
+  <div class="home-section__heading">
+    <p class="home-section__eyebrow">Choose by task</p>
+    <h2 id="task-chooser-title">What are you trying to do?</h2>
+    <p>Start with the project and guide that fit the work in front of you.</p>
+  </div>
+  <div class="task-grid">
+  {{- range $id := $order -}}
+    {{- $product := index $products $id -}}
+    {{- $nav := index $navigation $id -}}
+    {{- $productPages := where (where site.RegularPages "Params.product" $id) "Params.version" $product.default -}}
+    {{- $startPages := where $productPages "Params.source_path" $nav.start -}}
+    {{- $startHref := "" -}}
+    {{- with index $startPages 0 }}{{ $startHref = .RelPermalink }}{{ end -}}
+    {{- $icon := resources.Get (printf "icons/product-%s.svg" $id) -}}
+    <article class="task-card task-card--{{ $id }}">
+      <div class="task-card__top">
+        <img class="task-card__icon" src="{{ $icon.RelPermalink }}" alt="" width="48" height="48">
+        <h3>{{ index $titles $id }}</h3>
+      </div>
+      <p>{{ index $descriptions $id }}</p>
+      {{- if $showPrerequisites }}
+      <p class="task-card__prerequisite"><strong>Prerequisites:</strong> {{ index $prerequisites $id }}</p>
+      {{- end }}
+      {{- with index $startPages 0 -}}
+      <a class="task-card__action" href="{{ .RelPermalink }}">Get started: {{ .Title }} <span aria-hidden="true">→</span></a>
+      {{- end -}}
+      {{- $tutorialPages := sort (where $productPages "Params.reader_need" "Tutorial") "Params.order" -}}
+      {{- with index $tutorialPages 0 -}}
+        {{- if ne .RelPermalink $startHref -}}
+        {{- if eq $id "praxis" -}}
+        <p class="task-card__secondary"><a href="{{ "guides/use-filters/" | relURL }}">Configure built-in filters</a></p>
+        <p class="task-card__secondary"><a href="{{ .RelPermalink }}">Developer tutorial: {{ .Title }}</a></p>
+        {{- else -}}
+        <p class="task-card__secondary"><a href="{{ .RelPermalink }}">Tutorial: {{ .Title }}</a></p>
+        {{- end -}}
+        {{- end -}}
+      {{- end -}}
+    </article>
+  {{- end -}}
+  </div>
+</section>

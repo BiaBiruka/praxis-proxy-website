@@ -1,0 +1,87 @@
+{{- $page := .context -}}
+{{- if and $page.Params.product $page.Params.version -}}
+  {{- $productID := $page.Params.product -}}
+  {{- $version := $page.Params.version -}}
+  {{- $navigation := index hugo.Data.docs_navigation.products $productID -}}
+  {{- $allDocs := where site.Pages "Params.product" $productID -}}
+  {{- $allDocs = where $allDocs "Params.version" $version -}}
+  {{- $startPages := where $allDocs "Params.source_path" $navigation.start -}}
+  {{- $misc := slice -}}
+  {{- range $allDocs -}}
+    {{- if or (eq .Params.reader_need "Overview") (eq .Params.reader_need "Release") -}}
+      {{- $misc = $misc | append . -}}
+    {{- end -}}
+  {{- end -}}
+  <div id="td-sidebar-menu" class="td-sidebar__inner docs-sidebar">
+    <form class="td-sidebar__search d-flex align-items-center">
+      {{ partial "search-input.html" $page }}
+      <button class="btn btn-link td-sidebar__toggle" type="button" data-bs-toggle="collapse" data-bs-target="#td-section-nav" aria-controls="td-section-nav" aria-expanded="false" aria-label="Toggle section navigation"></button>
+    </form>
+    <nav class="td-sidebar-nav collapse foldable-nav" id="td-section-nav" aria-label="Documentation navigation">
+      <p class="docs-sidebar-context">{{ (index hugo.Data.docs_build_versions.products $productID).name }}</p>
+      <ul class="td-sidebar-nav__section pe-md-3 ul-0">
+        {{- range $startPages }}
+        <li class="docs-sidebar-get-started{{ if eq .RelPermalink $page.RelPermalink }} active{{ end }}">
+          <a href="{{ .RelPermalink }}"{{ if eq .RelPermalink $page.RelPermalink }} aria-current="page"{{ end }}>Get started</a>
+        </li>
+        {{- end }}
+        {{- range $navigation.groups }}
+          {{- $need := . -}}
+          {{- $needPages := where $allDocs "Params.reader_need" $need -}}
+          {{- if gt (len $needPages) 0 -}}
+            {{- $needID := printf "docs-need-%s-%s" $productID ($need | anchorize) -}}
+            <li class="td-sidebar-nav__section-title td-sidebar-nav__section docs-sidebar-group with-child{{ if eq $page.Params.reader_need $need }} active-path{{ end }}">
+              <input type="checkbox" id="{{ $needID }}"{{ if eq $page.Params.reader_need $need }} checked{{ end }}>
+              <label for="{{ $needID }}"><span>{{ if eq $need "How-to" }}How-to guides{{ else if eq $need "Explanation" }}Explanations{{ else if eq $need "Tutorial" }}Tutorials{{ else }}{{ $need }}{{ end }}</span></label>
+              <ul class="ul-1 foldable">
+                {{- $topicGroups := $needPages.GroupByParam "topic" -}}
+                {{- $topicOrder := $navigation.topic_order -}}
+                {{- range $topicGroups -}}
+                  {{- if not (in $topicOrder .Key) -}}
+                    {{- $topicOrder = $topicOrder | append .Key -}}
+                  {{- end -}}
+                {{- end -}}
+                {{- range $topicOrder -}}
+                  {{- range (where $topicGroups "Key" .) -}}
+                    <li class="docs-sidebar-topic">
+                      <span>{{ .Key }}</span>
+                      <ul class="ul-2">
+                        {{- range (.Pages.ByParam "order") }}
+                          <li class="docs-sidebar-item{{ if eq .RelPermalink $page.RelPermalink }} active{{ end }}">
+                            <a href="{{ .RelPermalink }}"{{ if eq .RelPermalink $page.RelPermalink }} aria-current="page"{{ end }}>{{ .LinkTitle }}</a>
+                          </li>
+                        {{- end }}
+                      </ul>
+                    </li>
+                  {{- end }}
+                {{- end }}
+              </ul>
+            </li>
+          {{- end -}}
+        {{- end }}
+        {{- if gt (len $misc) 0 }}
+          <li class="td-sidebar-nav__section-title td-sidebar-nav__section docs-sidebar-group with-child{{ if or (eq $page.Params.reader_need "Overview") (eq $page.Params.reader_need "Release") }} active-path{{ end }}">
+            {{- $miscID := printf "docs-misc-%s" $productID }}
+            <input type="checkbox" id="{{ $miscID }}"{{ if or (eq $page.Params.reader_need "Overview") (eq $page.Params.reader_need "Release") }} checked{{ end }}>
+            <label for="{{ $miscID }}"><span>Overview and releases</span></label>
+            <ul class="ul-1 foldable">
+              {{- range ($misc.ByParam "order") }}
+                <li class="docs-sidebar-item{{ if eq .RelPermalink $page.RelPermalink }} active{{ end }}"><a href="{{ .RelPermalink }}"{{ if eq .RelPermalink $page.RelPermalink }} aria-current="page"{{ end }}>{{ .LinkTitle }}</a></li>
+              {{- end }}
+            </ul>
+          </li>
+        {{- end }}
+      </ul>
+    </nav>
+  </div>
+{{- else -}}
+  <div id="td-sidebar-menu" class="td-sidebar__inner">
+    <nav class="td-sidebar-nav" aria-label="Site navigation">
+      <ul class="td-sidebar-nav__section pe-md-3 ul-0">
+        {{- range site.Menus.main }}
+        <li class="td-sidebar-nav__section-title"><a class="td-sidebar-link td-sidebar-link__page" href="{{ .URL }}">{{ .Name }}</a></li>
+        {{- end }}
+      </ul>
+    </nav>
+  </div>
+{{- end -}}

@@ -1,0 +1,30 @@
+{
+  "installed_on": "2026-09-30",
+  "skills": [
+    {
+      "repo": "anthropics/skills",
+      "path": "skills/frontend-design",
+      "sha": "8a1541c4a3ffa5a20a5a91de0dcf3f0bab1d1ef4",
+      "name": "frontend-design",
+      "url": "https://raw.githubusercontent.com/anthropics/skills/8a1541c4a3ffa5a20a5a91de0dcf3f0bab1d1ef4/skills/frontend-design/SKILL.md"
+    },
+    {
+      "repo": "vercel-labs/agent-skills",
+      "path": "skills/web-design-guidelines",
+      "sha": "063bee94c3f4df8453406c830b0a7df0f2860278",
+      "name": "web-design-guidelines",
+      "url": "https://raw.githubusercontent.com/vercel-labs/agent-skills/063bee94c3f4df8453406c830b0a7df0f2860278/skills/web-design-guidelines/SKILL.md"
+    },
+    {
+      "repo": "openai/skills",
+      "path": "skills/.curated/playwright",
+      "sha": "49f948faa9258a0c61caceaf225e179651397431",
+      "name": "playwright",
+      "url": "https://raw.githubusercontent.com/openai/skills/49f948faa9258a0c61caceaf225e179651397431/skills/.curated/playwright/SKILL.md"
+    }
+  ],
+  "security_scan": "Initial SKILL.md scan and installed frontend-design, web-design-guidelines, and Playwright Markdown resource scans: 0 findings. Playwright wrapper reviewed before execution.",
+  "guidelines_url": "https://raw.githubusercontent.com/vercel-labs/web-interface-guidelines/main/command.md",
+  "guidelines_sha256": "5a775e6411f790f518dbc9c1fa7c50a89e6873502d9a3530a6eb223a590bcfe8",
+  "browser_cli_version": "@playwright/cli 0.1.22 (skill wrapper npx, isolated from website dependencies)"
+}
