@@ -72,6 +72,8 @@ const routes = [
           }
           if (name==='how-to') {
             assert.equal(await page.locator('.docs-sidebar-context').count(),0,'Sidebar should omit the redundant project/version line');
+            assert.equal(await page.locator('.docs-sidebar-topic > span').filter({hasText:/^Examples$/}).count(),0,'Individual examples belong in the catalog, not the shared sidebar');
+            assert.equal(await page.locator('#td-section-nav a').filter({hasText:/^Configuration examples$/}).count(),1,'Sidebar exposes the versioned example catalog');
             const topics=await page.locator('.docs-sidebar-group').first().locator('.docs-sidebar-topic > span').allTextContents();
             assert(topics.indexOf('First Proxy')<topics.indexOf('Operating') && topics.indexOf('Operating')<topics.indexOf('Developing'),'Getting started and operations must precede development');
           }
@@ -180,6 +182,7 @@ const routes = [
 
     await page.goto(base+find('praxis','v0.7.2','docs/architecture/overview.md'));
     await page.waitForSelector('.mermaid svg');
+    await page.waitForFunction(()=>[...document.querySelectorAll('pre.mermaid')].every(node=>node.querySelector('svg')));
     const mermaidCount=await page.locator('.mermaid svg').count();
     assert(mermaidCount>0,'Mermaid diagrams rendered');
     await page.evaluate(()=>scrollTo(0,800));

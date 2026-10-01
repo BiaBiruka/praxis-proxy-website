@@ -1,6 +1,7 @@
 +++
 title = "Choose and configure filters"
 description = "Use Praxis’s built-in filters to change how a proxy handles requests."
+type = "guides"
 body_class = "guides-page"
 reader_need = "How-to"
 topic = "Configuration"
@@ -9,6 +10,8 @@ topic = "Configuration"
 Praxis applies filters to requests as they pass through a proxy. A filter is a named rule that can forward a request, change a header, or return a response. You choose and configure built-in filters in a YAML file; this does not require writing Rust.
 
 Each Praxis documentation link below shows the current default release. Use a binary built from that same Praxis release; {{< docs-link product="praxis" source="docs/quickstart.md" label="the quickstart" >}} explains how to build and run it.
+
+If you have not run Praxis yet, begin with the [first reverse-proxy tutorial]({{< relref "first-proxy.md" >}}). To adapt a full configuration for another task, browse the [versioned example catalog]({{< relref "../examples/_index.md" >}}).
 
 ## Choose a filter
 

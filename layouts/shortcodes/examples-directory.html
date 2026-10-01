@@ -1,0 +1,25 @@
+{{- $products := hugo.Data.docs_build_versions.products -}}
+<div class="example-directory">
+{{- range $id := slice "praxis" "ai" "policy" -}}
+  {{- $project := index $products $id -}}
+  {{- $pages := where (where site.RegularPages "Params.product" $id) "Params.version" $project.default -}}
+  {{- $examples := where $pages "Params.example_category" "!=" nil -}}
+  <section aria-labelledby="examples-{{ $id }}">
+    <h2 id="examples-{{ $id }}">{{ $project.name }}</h2>
+    <p>Selected documentation: {{ $project.default }}.</p>
+    {{- if $examples -}}
+    <ul class="example-starting-list">
+      {{- range first 6 (sort (where $examples "Params.example_featured" true) "Title") -}}
+      {{- $task := .Params.example_task | default .Title -}}
+      <li><a href="{{ .RelPermalink }}">{{ $task }}</a>{{ with .Description }}<p>{{ . }}</p>{{ end }}</li>
+      {{- end -}}
+    </ul>
+    <p><a href="{{ printf "/%s/%s/examples/" $id $project.default | relURL }}">Browse all examples</a></p>
+    {{- else -}}
+    <p>Start with the policy quickstart and its included authorization and redaction scenario.</p>
+    {{- $start := index (where $pages "Params.source_path" "docs/content/quickstart.md") 0 -}}
+    {{- with $start }}<p><a href="{{ .RelPermalink }}">Follow the Policy quickstart</a></p>{{ end -}}
+    {{- end -}}
+  </section>
+{{- end -}}
+</div>

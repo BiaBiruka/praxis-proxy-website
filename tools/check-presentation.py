@@ -39,6 +39,8 @@ def main():
     public = parser.parse_args().public
     catalog = json.loads((ROOT / 'data/docs_versions.json').read_text())
     defaults = {key: config['default'] for key, config in catalog['products'].items()}
+    versions = {key: {r['version'] for r in config['releases']} | {'dev'}
+                for key, config in catalog['products'].items()}
     checked = 0
     for path in public.rglob('index.html'):
         text = path.read_text()
@@ -49,6 +51,7 @@ def main():
         assert len(page.canonical) == 1, f'{path}: missing/duplicate canonical'
         relative = path.relative_to(public).parts
         archived = (len(relative) > 2 and relative[0] in defaults
+                    and relative[1] in versions[relative[0]]
                     and relative[1] != defaults[relative[0]])
         expected = 'noindex, follow' if archived else 'index, follow'
         assert page.robots == [expected], f'{path}: unexpected robots {page.robots}'
@@ -59,13 +62,15 @@ def main():
     expected_tasks = {next(x['url'] for x in sources if x['product'] == product
                            and x['version'] == default
                            and x['source_path'] == navigation['products'][product]['start'])
-                      for product, default in defaults.items()}
+                      for product, default in defaults.items() if product != 'praxis'}
+    expected_tasks.add('/guides/first-proxy/')
     for route in ('index.html', 'start/index.html'):
         page = Page((public / route).read_text())
         assert set(page.task_links) == expected_tasks, f'{route}: missing task starting guide'
-    for route in ('start', 'docs', 'search', 'community'):
+    for route in ('start', 'docs', 'search', 'community', 'examples', 'visual-guides',
+                  'guides/install', 'guides/first-proxy', 'guides/operate', 'guides/extend'):
         assert (public / route / 'index.html').is_file(), f'Missing /{route}/'
-    custom = list((public / 'js').glob('praxis*.js'))
+    custom = list((public / 'js').glob('praxis*.js')) + list((public / 'js').glob('flow-walkthrough*.js'))
     assert custom, 'Missing website interaction bundle'
     size = sum(len(gzip.compress(p.read_bytes())) for p in custom)
     assert size <= 20 * 1024, f'Custom JavaScript budget exceeded: {size} bytes gzip'

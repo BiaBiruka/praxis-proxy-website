@@ -1,6 +1,6 @@
 +++
 title = "Praxis ecosystem"
-description = "Send requests to the right services, connect AI providers, and control access to tools and data with Praxis."
+description = "Run a configurable HTTP reverse proxy or TCP forwarder; add AI gateway and policy capabilities when your system needs them."
 +++
 
 {{< task-chooser >}}

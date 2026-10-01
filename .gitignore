@@ -5,4 +5,17 @@ resources/_gen/
 .hugo_build.lock
 __pycache__/
 .playwright-cli/
-output/playwright/
+/output/
+
+# Local planning and review notes; keep operational route data and its explanation committable.
+/docs/*
+!/docs/original-route-mapping.json
+!/docs/original-route-mapping.md
+
+# Local agent state and installed skills.
+/.impeccable/
+/.agents/skills/
+/.codex/skills/
+/.claude/skills/
+/.github/skills/
+/skills/

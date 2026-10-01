@@ -10,6 +10,8 @@ import re
 import shutil
 import subprocess
 import tarfile
+import tempfile
+from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
 from urllib.parse import quote, unquote, urlsplit, urlunsplit
 
@@ -22,6 +24,8 @@ DATA_OUT = CACHE / "docs-data"
 STATIC_OUT = CACHE / "docs-static"
 CATALOG = ROOT / "data" / "docs_versions.json"
 NAVIGATION = ROOT / "data" / "docs_navigation.json"
+EXAMPLE_METADATA = ROOT / "data" / "example_metadata.json"
+COVERAGE_REPORT = ROOT / "docs" / "example-coverage-report.md"
 RELEASE_TAG = re.compile(r"v\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?\Z")
 GIT_REF = re.compile(r"[A-Za-z0-9][A-Za-z0-9._/-]*\Z")
 GIT_SHA = re.compile(r"[0-9a-fA-F]{40}\Z")
@@ -38,6 +42,29 @@ HTML_TAG = re.compile(r"<[^>]*>")
 ARTICLE_NEEDS = ("How-to", "Tutorial", "Reference", "Explanation")
 OTHER_NEEDS = ("Overview", "Release")
 EXAMPLE_SUFFIXES = {".yaml", ".yml", ".json", ".toml", ".conf", ".ini", ".xml", ".sh", ".py", ".rs"}
+EXAMPLE_RESOURCE = re.compile(r"(?<![A-Za-z0-9_])(?:[A-Za-z0-9_./+-]+\.(?:json|ya?ml|pem|crt|key|der|p12|pfx|txt|proto|bin))(?![A-Za-z0-9_])", re.I)
+INTEGRATION_MARKERS = re.compile(
+    r"(?:anthropic|openai|azure|vertex|gcp|aws|postgres|nemo|lakera|llm.?d|llmisvc|vllm|"
+    r"otlp|grpc|mcp|a2a|web.?search|vector.?store|mtls|tls|certificate|credential|"
+    r"external|database|cloud|agentic|guardrail|provider)", re.I,
+)
+_EXAMPLE_METADATA_CACHE: dict | None = None
+
+
+@dataclass
+class ExampleContext:
+    product: str
+    version: str
+    label: str
+    sha: str
+    config: dict
+    repo: Path
+    descriptions: dict[str, str]
+    known_paths: set[str]
+    assets: Path
+    working: bool
+    source_status: str
+    edit_branch: str
 
 
 def run(args: list[str], *, cwd: Path = ROOT, capture: bool = False) -> str:
@@ -252,7 +279,7 @@ def markdown_links(text: str):
 
 
 def linked_examples(source_files: list[Path], source_root: Path, *, repo: Path, sha: str,
-                    working: bool, known_paths: set[str]) -> tuple[dict[str, str], set[str], dict[str, str]]:
+                    working: bool, known_paths: set[str]) -> tuple[dict[str, bytes], set[str], dict[str, str]]:
     """Load only textual examples linked by selected Markdown pages."""
     paths: set[str] = set()
     directories: set[str] = set()
@@ -276,7 +303,7 @@ def linked_examples(source_files: list[Path], source_root: Path, *, repo: Path, 
             ):
                 directories.add(target.rstrip("/"))
 
-    examples: dict[str, str] = {}
+    examples: dict[str, bytes] = {}
     for path in sorted(paths):
         body = read_blob(repo, sha, path, working=working)
         if body is None:
@@ -286,7 +313,7 @@ def linked_examples(source_files: list[Path], source_root: Path, *, repo: Path, 
         except UnicodeDecodeError:
             continue
         if "\0" not in value:
-            examples[path] = value
+            examples[path] = body
 
     descriptions: dict[str, str] = {}
     readme = read_blob(repo, sha, "examples/README.md", working=working)
@@ -304,98 +331,348 @@ def example_content_path(source_path: str) -> str:
     return "examples/_index.md" if source_path == "examples/README.md" else source_path + ".md"
 
 
-def write_example_pages(product: str, version: str, label: str, sha: str, config: dict,
-                        examples: dict[str, str], directories: set[str], descriptions: dict[str, str],
-                        known_paths: set[str], assets: Path,
-                        working: bool, source_status: str,
-                        edit_branch: str) -> list[dict]:
+def tracked_example_configs(repo: Path, sha: str, *, working: bool) -> dict[str, bytes]:
+    paths = set(git(repo, "ls-tree", "-r", "--name-only", sha).splitlines())
+    if working:
+        paths.update(git(repo, "ls-files", "--cached").splitlines())
+    examples = {}
+    for path in sorted(paths):
+        if not path.startswith("examples/") or PurePosixPath(path).suffix.lower() not in {".yaml", ".yml"}:
+            continue
+        body = read_blob(repo, sha, path, working=working)
+        if body is not None:
+            examples[path] = body
+    return examples
+
+
+def example_config_groups(configs: dict[str, bytes]) -> set[str]:
+    groups = {"examples/configs"}
+    for path in configs:
+        parent = PurePosixPath(path).parent
+        while parent.as_posix().startswith("examples/configs"):
+            groups.add(parent.as_posix())
+            if parent.as_posix() == "examples/configs":
+                break
+            parent = parent.parent
+    return groups if configs else set()
+
+
+def example_source_mapping(examples: dict[str, bytes], directories: set[str]) -> dict[str, str]:
+    mapping = {path: example_content_path(path) for path in examples}
     if not examples and not directories:
-        return []
-    readme_path = "examples/README.md"
-    output_paths = {path: example_content_path(path) for path in examples}
-    output_paths[readme_path] = "examples/_index.md"
+        return mapping
+    mapping.update({"examples": "examples/_index.md", "examples/README.md": "examples/_index.md"})
+    configs = {path: body for path, body in examples.items()
+               if path.startswith("examples/configs/") and PurePosixPath(path).suffix.lower() in {".yaml", ".yml"}}
+    groups = example_config_groups(configs)
+    mapping.update({group: f"{group}/_index.md" for group in groups})
+    mapping.update({directory: mapping.get(directory, "examples/_index.md") for directory in directories})
+    return mapping
 
-    readme_exists = "examples/README.md" in known_paths
-    samples = [(path, content) for path, content in sorted(examples.items()) if path != readme_path]
-    index_lines = [
-        "Examples linked from the project documentation. Each file has a version-pinned page and download.",
-        "",
-    ]
-    for source_path, _ in samples:
-        relative = PurePosixPath(source_path).relative_to("examples").as_posix()
-        detail = descriptions.get(source_path, "")
-        link = site_url(product, version, output_paths[source_path])
-        index_lines.append(f"- [`{relative}`]({link})" + (f" — {detail}" if detail else ""))
-    index_body = "\n".join(index_lines) + "\n"
 
-    output: list[dict] = []
-    product_name = config["name"]
-    for order, (source_path, content) in enumerate(samples, start=1000):
-        output_path = output_paths[source_path]
-        title = PurePosixPath(source_path).stem.replace("-", " ").replace("_", " ").title()
-        category = PurePosixPath(source_path).parent.name.replace("-", " ")
-        summary = descriptions.get(source_path) or f"Configuration example in {category} for {product_name}."
-        if len(summary) < 20:
-            summary = f"{summary} Example configuration for {product_name}."
-        download_path = f"{product}/{version}/_assets/{source_path}"
-        download_file = assets / download_path
-        download_file.parent.mkdir(parents=True, exist_ok=True)
-        download_file.write_bytes(content.encode("utf-8"))
-        download = f"/{download_path}"
-        fence_length = max((len(match.group(0)) for match in re.finditer(r"`+", content)), default=2) + 1
-        fence = "`" * max(3, fence_length)
-        language = PurePosixPath(source_path).suffix.removeprefix(".")
-        page_body = f"Download the [source file]({download}).\n\n{fence}{language}\n{content}"
-        if not content.endswith("\n"):
-            page_body += "\n"
-        page_body += f"{fence}\n"
-
-        destination = DOCS_OUT / product / version / output_path
+def copy_extra_assets(context: ExampleContext) -> None:
+    for source_path in context.config.get("extra_assets", []):
+        path = PurePosixPath(source_path)
+        if path.is_absolute() or ".." in path.parts:
+            raise RuntimeError(f"unsafe extra asset path for {context.config['name']}: {source_path}")
+        body = read_blob(context.repo, context.sha, source_path, working=context.working)
+        if body is None:
+            raise RuntimeError(f"configured {context.config['name']} extra asset is missing at {context.sha}: {source_path}")
+        destination = context.assets / context.product / context.version / "_assets" / source_path
         destination.parent.mkdir(parents=True, exist_ok=True)
-        path_base = {
+        destination.write_bytes(body)
+
+
+def example_metadata(product: str, source_path: str, content: bytes, descriptions: dict[str, str]) -> dict:
+    global _EXAMPLE_METADATA_CACHE
+    if _EXAMPLE_METADATA_CACHE is None:
+        _EXAMPLE_METADATA_CACHE = json.loads(EXAMPLE_METADATA.read_text(encoding="utf-8"))
+    authored = _EXAMPLE_METADATA_CACHE.get(product, {}).get(source_path, {})
+    text = content.decode("utf-8", "replace")
+    title = PurePosixPath(source_path).stem.replace("-", " ").replace("_", " ").title()
+    group = PurePosixPath(source_path).parent.relative_to("examples/configs").as_posix()
+    summary = authored.get("summary") or descriptions.get(source_path) or f"{title} configuration for {group.replace('-', ' ')}."
+    if len(summary) < 20:
+        summary = f"{summary} Configuration example for {product}."
+    category = authored.get("category")
+    if category not in {"practical", "integration", "fixture"}:
+        category = "fixture" if "fixture" in PurePosixPath(source_path).stem.lower() else (
+            "integration" if INTEGRATION_MARKERS.search(source_path + " " + summary + " " + text) else "practical"
+        )
+    task = authored.get("task") or summary
+    prerequisites = authored.get("prerequisites")
+    if prerequisites is None:
+        prerequisites = (
+            ["The matching test or replay fixture; this is not a standalone deployment configuration."]
+            if category == "fixture" else
+            ["The external service, credentials, or certificates referenced by this configuration."]
+            if category == "integration" else
+            ["The product runtime and any backend services referenced by this configuration."]
+        )
+    outcome = authored.get("outcome")
+    search_terms = list(dict.fromkeys([task, summary, group, *prerequisites]))
+    return {
+        "title": title, "summary": summary, "task": task, "group": group,
+        "category": category, "prerequisites": prerequisites, "outcome": outcome,
+        "featured": bool(authored.get("featured")), "search_terms": search_terms,
+    }
+
+
+def example_resources(content: bytes, source_path: str, known_paths: set[str]) -> set[str]:
+    resources = set()
+    for match in EXAMPLE_RESOURCE.finditer(content.decode("utf-8", "replace")):
+        candidate = match.group(0).strip("`'\" :;()[]{}").rstrip(".,")
+        if candidate.startswith(("/", "http://", "https://")):
+            continue
+        resolved = normalized_repo_path(source_path, candidate)
+        for path in (resolved, candidate):
+            if path in known_paths and path != source_path:
+                resources.add(path)
+    return resources
+
+
+def example_page_description(context: ExampleContext, source_path: str, content: bytes,
+                             details: dict | None) -> tuple[str, str, str, set[str]]:
+    if details:
+        classification = {"practical": "Practical", "integration": "Setup-dependent integration", "fixture": "Test fixture"}[details["category"]]
+        intro = f"**Category:** {classification}  \n**Task:** {details['task']}\n"
+        if details["prerequisites"]:
+            intro += "\n**Prerequisites:** " + "; ".join(details["prerequisites"]) + "\n"
+        if details["outcome"]:
+            intro += f"\n**Expected outcome:** {details['outcome']}\n"
+        intro += "\nThe catalog preserves the pinned source file. Its presence here does not mean this configuration was executed or that external services are bundled.\n"
+        return details["title"], details["summary"], intro, example_resources(content, source_path, context.known_paths)
+    title = PurePosixPath(source_path).stem.replace("-", " ").replace("_", " ").title()
+    group = PurePosixPath(source_path).parent.name.replace("-", " ")
+    summary = context.descriptions.get(source_path) or f"Example source file in {group} for {context.config['name']}."
+    if len(summary) < 20:
+        summary = f"{summary} Example source for {context.config['name']}."
+    return title, summary, "This file is copied from the selected source snapshot.\n", set()
+
+
+def copy_example_companions(context: ExampleContext, source_path: str, resources: set[str]) -> list[str]:
+    links = []
+    for companion in sorted(resources):
+        body = read_blob(context.repo, context.sha, companion, working=context.working)
+        if body is None:
+            continue
+        destination = context.assets / context.product / context.version / "_assets" / companion
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        destination.write_bytes(body)
+        links.append(f"- [{PurePosixPath(companion).name}](/{context.product}/{context.version}/_assets/{companion})")
+    return links
+
+
+def example_page_body(source_path: str, content: bytes, intro: str,
+                      download: str, companion_links: list[str]) -> str:
+    text = content.decode("utf-8", "replace")
+    fence_length = max((len(match.group(0)) for match in re.finditer(r"`+", text)), default=2) + 1
+    fence = "`" * max(3, fence_length)
+    body = intro + f"\nDownload the [source file]({download})."
+    if companion_links:
+        body += "\n\nCompanion resources from the same snapshot:\n\n" + "\n".join(companion_links)
+    body += f"\n\n{fence}{PurePosixPath(source_path).suffix.removeprefix('.')}\n{text}"
+    return body + ("" if text.endswith("\n") else "\n") + f"{fence}\n"
+
+
+def example_page_frontmatter(context: ExampleContext, source_path: str, output_path: str,
+                             order: int, title: str, summary: str, details: dict | None) -> dict:
+    product, version, label, sha, config = (
+        context.product, context.version, context.label, context.sha, context.config,
+    )
+    metadata = {
+        "title": title, "product": product, "version": version, "version_label": label,
+        "source_commit": sha, "source_repo": config["repo"], "source_path": source_path,
+        "issue_url": config["issues"], "version_archive": version != "dev" and version != config["default"],
+        "github_repo": config["repo"], "github_branch": sha, "github_project_repo": config["repo"],
+        "github_subdir": "", "path_base_for_github_subdir": {
             "from": "^" + re.escape(f".cache/docs/{product}/{version}/{output_path}") + "$",
             "to": source_path,
-        }
-        metadata = {
-            "title": title, "product": product, "version": version, "version_label": label,
-            "source_commit": sha, "source_repo": config["repo"], "source_path": source_path,
-            "issue_url": config["issues"], "version_archive": version != "dev" and version != config["default"],
-            "github_repo": config["repo"], "github_branch": sha, "github_project_repo": config["repo"],
-            "github_subdir": "", "path_base_for_github_subdir": path_base,
-            "description": summary, "summary": summary, "reader_need": "Reference", "topic": "Examples",
-            "order": order, "preview_dirty": bool(source_status),
-        }
-        if version == "dev" and edit_branch:
-            metadata["edit_url"] = f"{config['repo']}/edit/{edit_branch}/{source_path}"
-        destination.write_text(
-            frontmatter(metadata) + "{{< docs-version >}}\n\n" + page_body + "\n{{< docs-source-links >}}\n",
-            encoding="utf-8",
-        )
-        output.append({"product": product, "version": version, "source_path": source_path,
-                       "content_path": output_path, "source_commit": sha,
-                       "url": site_url(product, version, output_path), "dirty": bool(source_status)})
-
-    output_path = "examples/_index.md"
-    index_source = readme_path if readme_exists else "examples"
-    count = len(samples)
-    summary = f"Browse {count} example files linked from {product_name} documentation."
-    metadata = {
-        "title": "Examples", "product": product, "version": version, "version_label": label,
-        "source_commit": sha, "source_repo": config["repo"], "source_path": index_source,
-        "issue_url": config["issues"], "version_archive": version != "dev" and version != config["default"],
-        "description": summary, "summary": summary, "reader_need": "Overview", "topic": "Examples", "order": 20,
-        "no_list": True,
+        },
+        "description": summary, "summary": summary, "reader_need": "Reference", "topic": "Examples",
+        "order": order, "preview_dirty": bool(context.source_status),
     }
+    if details:
+        metadata.update({
+            "example_category": details["category"], "example_task": details["task"],
+            "example_group": details["group"], "example_prerequisites": details["prerequisites"],
+            "example_outcome": details["outcome"], "example_featured": details["featured"],
+            "example_search": details["search_terms"],
+        })
+    if version == "dev" and context.edit_branch:
+        metadata["edit_url"] = f"{config['repo']}/edit/{context.edit_branch}/{source_path}"
+    if version == config["default"]:
+        metadata["aliases"] = [site_url(product, "latest", output_path)]
+    return metadata
+
+
+def write_example_page(context: ExampleContext, source_path: str, content: bytes,
+                       output_path: str, order: int, details: dict | None) -> dict:
+    product, version = context.product, context.version
+    title, summary, intro, resources = example_page_description(
+        context, source_path, content, details,
+    )
+    download_path = f"{product}/{version}/_assets/{source_path}"
+    download_file = context.assets / download_path
+    download_file.parent.mkdir(parents=True, exist_ok=True)
+    download_file.write_bytes(content)
+    companions = copy_example_companions(context, source_path, resources)
+    page_body = example_page_body(source_path, content, intro, f"/{download_path}", companions)
+    metadata = example_page_frontmatter(context, source_path, output_path, order, title, summary, details)
     destination = DOCS_OUT / product / version / output_path
     destination.parent.mkdir(parents=True, exist_ok=True)
     destination.write_text(
-        frontmatter(metadata) + "{{< docs-version >}}\n\n" + index_body,
+        frontmatter(metadata) + "{{< docs-version >}}\n\n" + page_body + "\n{{< docs-source-links >}}\n",
         encoding="utf-8",
     )
-    output.append({"product": product, "version": version, "source_path": index_source,
-                   "content_path": output_path, "source_commit": sha,
-                   "url": site_url(product, version, output_path), "dirty": bool(source_status)})
+    return {"product": product, "version": version, "source_path": source_path,
+            "content_path": output_path, "source_commit": context.sha,
+            "url": site_url(product, version, output_path), "dirty": bool(context.source_status)}
+
+
+def example_index_metadata(context: ExampleContext, page: dict) -> dict:
+    product, version, label, config = context.product, context.version, context.label, context.config
+    metadata = {
+        "title": page["title"], "product": product, "version": version, "version_label": label,
+        "source_commit": context.sha, "source_repo": config["repo"], "source_path": page["source_path"],
+        "issue_url": config["issues"], "version_archive": version != "dev" and version != config["default"],
+        "description": page["description"], "summary": page["summary"], "reader_need": "Overview",
+        "topic": "Examples", "order": page["order"],
+    }
+    if version == config["default"]:
+        metadata["aliases"] = [site_url(product, "latest", page["content_path"])]
+    return metadata
+
+
+def write_example_index(context: ExampleContext, page: dict, metadata: dict, lines: list[str]) -> dict:
+    output_path = page["content_path"]
+    destination = DOCS_OUT / context.product / context.version / output_path
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    destination.write_text(frontmatter(metadata) + "{{< docs-version >}}\n\n" + "\n".join(lines) + "\n",
+                           encoding="utf-8")
+    return {"product": context.product, "version": context.version, "source_path": page["source_path"],
+            "content_path": output_path, "source_commit": context.sha,
+            "url": site_url(context.product, context.version, output_path),
+            "dirty": bool(context.source_status)}
+
+
+def write_example_catalog_index(context: ExampleContext, samples: list[tuple[str, bytes]],
+                                configs: dict[str, bytes], output_paths: dict[str, str],
+                                group_pages: dict[str, str]) -> dict:
+    product, version, label, sha, config = (
+        context.product, context.version, context.label, context.sha, context.config,
+    )
+    descriptions = context.descriptions
+    index_source = "examples/README.md" if "examples/README.md" in context.known_paths else "examples"
+    featured = [(path, body) for path, body in sorted(configs.items())
+                if example_metadata(product, path, body, descriptions)["featured"]]
+    categories = sorted({PurePosixPath(path).relative_to("examples/configs").parts[0] for path in configs
+                         if PurePosixPath(path).parent.as_posix() != "examples/configs"})
+    lines = [
+        f"Browse {len(configs)} tracked YAML configurations from the {label} {config['name']} source snapshot.",
+        "Pages and downloads keep the selected version and source commit. Examples may need local services, credentials, or certificates; the catalog does not claim every configuration was run.",
+        "", "## Start with these tasks", "",
+    ]
+    for path, body in featured:
+        details = example_metadata(product, path, body, descriptions)
+        lines.append(f"- [{details['task']}]({site_url(product, version, output_paths[path])}) — {details['summary']}")
+    if not featured:
+        lines.append("Choose a category below to browse every published YAML configuration.")
+    lines.extend(["", "## Browse all configurations", ""])
+    if configs:
+        lines.append(f"- [All configuration categories]({site_url(product, version, group_pages['examples/configs'])})")
+        for category in categories:
+            group = f"examples/configs/{category}"
+            title = category.replace("-", " ").replace("_", " ").title()
+            lines.append(f"- [{title}]({site_url(product, version, group_pages[group])})")
+    other_samples = [(path, body) for path, body in samples if path not in configs]
+    if other_samples:
+        lines.extend(["", "## Other linked source examples", ""])
+        lines.extend(
+            f"- [{PurePosixPath(path).relative_to('examples').as_posix()}]("
+            f"{site_url(product, version, output_paths[path])})" for path, _ in other_samples
+        )
+    summary = f"Browse {len(configs)} tracked YAML configurations for {config['name']}, organized by task and setup needs."
+    page = {"title": "Examples", "source_path": index_source, "content_path": "examples/_index.md",
+            "description": summary, "summary": summary, "order": 20}
+    metadata = example_index_metadata(context, page)
+    metadata.update({"example_catalog": True, "example_count": len(configs)})
+    return write_example_index(context, page, metadata, lines)
+
+
+def write_example_category_indexes(context: ExampleContext, configs: dict[str, bytes],
+                                   output_paths: dict[str, str], group_pages: dict[str, str]) -> list[dict]:
+    product, version, config = context.product, context.version, context.config
+    descriptions = context.descriptions
+    output = []
+    for group in sorted(group_pages):
+        group_files = [(path, body) for path, body in sorted(configs.items())
+                       if PurePosixPath(path).parent.as_posix() == group]
+        children = sorted(child for child in group_pages
+                          if PurePosixPath(child).parent.as_posix() == group)
+        title = "All configurations" if group == "examples/configs" else PurePosixPath(group).name.replace("-", " ").replace("_", " ").title()
+        lines = [f"Configurations in {title if group != 'examples/configs' else config['name']}.", ""]
+        if children:
+            lines.extend(["## Subcategories", ""])
+            for child in children:
+                child_title = PurePosixPath(child).name.replace("-", " ").replace("_", " ").title()
+                lines.append(f"- [{child_title}]({site_url(product, version, group_pages[child])})")
+            lines.append("")
+        if group_files:
+            lines.extend(["## Configurations", ""])
+            for path, body in group_files:
+                details = example_metadata(product, path, body, descriptions)
+                lines.append(f"- [{details['title']}]({site_url(product, version, output_paths[path])}) — {details['summary']}")
+        category = "configurations" if group == "examples/configs" else PurePosixPath(group).name
+        output_path = group_pages[group]
+        description = f"{len(group_files)} configurations in {title} for {config['name']}."
+        summary = f"{len(group_files)} version-pinned configuration pages."
+        page = {"title": title, "source_path": group, "content_path": output_path,
+                "description": description, "summary": summary, "order": 21}
+        metadata = example_index_metadata(context, page)
+        metadata["example_catalog_category"] = category
+        output.append(write_example_index(context, page, metadata, lines))
     return output
+
+
+def write_example_pages(context: ExampleContext, examples: dict[str, bytes], directories: set[str]) -> list[dict]:
+    if not examples and not directories:
+        return []
+    product = context.product
+    readme_path = "examples/README.md"
+    samples = [(path, content) for path, content in sorted(examples.items()) if path != readme_path]
+    configs = {path: body for path, body in samples
+               if path.startswith("examples/configs/") and PurePosixPath(path).suffix.lower() in {".yaml", ".yml"}}
+    group_pages = {group: f"{group}/_index.md" for group in example_config_groups(configs)}
+    output_paths = example_source_mapping(examples, directories)
+    output_paths.update(group_pages)
+    output = [
+        write_example_page(context, path, body, output_paths[path], order,
+                           example_metadata(product, path, body, context.descriptions) if path in configs else None)
+        for order, (path, body) in enumerate(samples, start=1000)
+    ]
+    output.append(write_example_catalog_index(
+        context, samples, configs, output_paths, group_pages,
+    ))
+    output.extend(write_example_category_indexes(
+        context, configs, output_paths, group_pages,
+    ))
+    return output
+
+
+def check_curated_example_paths() -> None:
+    curated = json.loads(EXAMPLE_METADATA.read_text(encoding="utf-8"))
+    products = catalog()["products"]
+    for product, entries in curated.items():
+        config = products[product]
+        release = next(item for item in config["releases"] if item["version"] == config["default"])
+        known = repo_paths(SOURCES / product, release["sha"], working=False)
+        missing = set(entries) - known
+        assert not missing, f"curated {product} examples are absent from {release['version']}: {sorted(missing)}"
+    tls = example_metadata(
+        "praxis", "examples/configs/protocols/tls-termination.yaml", b"", {},
+    )
+    assert tls["featured"] and any("does not include" in item for item in tls["prerequisites"])
 
 
 def map_product_doc(config: dict, source_path: str) -> str | None:
@@ -607,6 +884,22 @@ def quote_toml(value: str) -> str:
     return json.dumps(value, ensure_ascii=False)
 
 
+def toml_literal(value) -> str:
+    if isinstance(value, bool):
+        return "true" if value else "false"
+    if isinstance(value, int):
+        return str(value)
+    if isinstance(value, list):
+        return "[" + ", ".join(quote_toml(str(item)) for item in value) + "]"
+    return quote_toml(str(value))
+
+
+def add_example_frontmatter(lines: list[str], values: dict) -> None:
+    for key, value in values.items():
+        if key.startswith("example_") and value is not None:
+            lines.append(f"{key} = {toml_literal(value)}")
+
+
 def frontmatter(values: dict) -> str:
     lines = ["+++", f"title = {quote_toml(values['title'])}", 'type = "docs"']
     for key in ("weight", "order", "product", "version", "version_label", "source_commit", "source_repo",
@@ -621,6 +914,7 @@ def frontmatter(values: dict) -> str:
     for key in ("version_archive", "preview_dirty"):
         if key in values:
             lines.append(f"{key} = {'true' if values[key] else 'false'}")
+    add_example_frontmatter(lines, values)
     if values.get("aliases"):
         lines.append("aliases = [" + ", ".join(quote_toml(value) for value in values["aliases"]) + "]")
     if "related_sourcepaths" in values:
@@ -829,6 +1123,110 @@ def validate_navigation(source_catalog: dict, navigation: dict) -> None:
                 raise RuntimeError(f"{product}:{source_path} needs a meaningful docs_navigation summary")
 
 
+def write_example_coverage_report(source_catalog: dict, coverage: dict) -> None:
+    lines = [
+        "# Versioned example coverage",
+        "",
+        "Generated by `tools/docs.py prepare`. Every tracked YAML file under each selected source snapshot's `examples/` tree is rendered as a version-pinned page with an exact-byte download. Fixture configs remain available in category discovery and are marked as fixtures; integrations are labeled as setup-dependent. The renderer does not claim that configs were executed.",
+        "",
+        "The inventory includes all cataloged release snapshots and the current development snapshot. YAML under tests, fixtures outside `examples/`, and source/build tooling is outside the user-example path boundary; it is not silently omitted from this catalog because it is not a published example candidate.",
+        "All candidate YAML files in these snapshots are under `examples/configs/`; the report has one row for each source path, with every version where it exists.",
+        "",
+        "## Snapshot counts",
+        "",
+        "| Product | Snapshot | Commit | YAML pages | Practical | Integration | Fixtures |",
+        "| --- | --- | --- | ---: | ---: | ---: | ---: |",
+    ]
+    for product, config in source_catalog["products"].items():
+        versions = [release["version"] for release in config["releases"]] + ["dev"]
+        for version in versions:
+            if (product, version) not in coverage:
+                continue
+            sha, entries = coverage[(product, version)]
+            counts = {category: sum(item["category"] == category for item in entries.values())
+                      for category in ("practical", "integration", "fixture")}
+            lines.append(
+                f"| {config['name']} | `{version}` | `{sha}` | {len(entries)} | "
+                f"{counts['practical']} | {counts['integration']} | {counts['fixture']} |"
+            )
+
+    for product, config in source_catalog["products"].items():
+        snapshots = {version: entries for (name, version), (_, entries) in coverage.items() if name == product}
+        paths = sorted({path for entries in snapshots.values() for path in entries})
+        lines.extend([
+            "",
+            f"## {config['name']} source paths",
+            "",
+            "Each row names a generated page. Snapshot names identify the releases and development source where that path exists.",
+            "",
+            "| Source path | Category | Snapshot coverage |",
+            "| --- | --- | --- |",
+        ])
+        for path in paths:
+            present = [version for version in snapshots if path in snapshots[version]]
+            selected = next((snapshots[version][path] for version in reversed(present)
+                             if version == "dev" or version == config["default"]), snapshots[present[-1]][path])
+            category = selected["category"]
+            if len({snapshots[version][path]["category"] for version in present}) > 1:
+                category += " (classification follows each snapshot's metadata)"
+            lines.append(f"| `{path}` | {category} | {', '.join(f'`{version}`' for version in present)} |")
+    COVERAGE_REPORT.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+
+def check_example_catalog_adapter() -> None:
+    global DOCS_OUT
+    sample_path = "examples/configs/traffic-management/basic-reverse-proxy.yaml"
+    root_config_path = "examples/configs/a2a-agent-card-routing.yaml"
+    tls_path = "examples/configs/protocols/tls-termination.yaml"
+    raw_config = b"listener:\r\n  address: 127.0.0.1:8080\r\n"
+    details = example_metadata("praxis", sample_path, raw_config, {})
+    assert details["category"] == "practical" and details["featured"]
+    assert example_source_mapping({sample_path: raw_config}, set())["examples/configs"] == "examples/configs/_index.md"
+    fixture = example_metadata("ai", "examples/configs/openai/responses/agentic-loop-fixture.yaml", b"fixture: true\n", {})
+    assert fixture["category"] == "fixture"
+    assert example_resources(b"overlay_file: overlay.json\n", "examples/configs/route.yaml",
+                             {"examples/configs/overlay.json"}) == {"examples/configs/overlay.json"}
+    assert example_resources(b"cert_path: ./localhost+1.pem\n", "examples/configs/protocols/tls.yaml",
+                             {"examples/configs/protocols/localhost+1.pem"}) == {
+                                 "examples/configs/protocols/localhost+1.pem",
+                             }
+
+    original_docs_out = DOCS_OUT
+    try:
+        with tempfile.TemporaryDirectory() as directory:
+            tmp = Path(directory)
+            DOCS_OUT = tmp / "docs"
+            config = {
+                    "name": "Praxis", "repo": "https://github.com/praxis-proxy/praxis",
+                    "issues": "https://github.com/praxis-proxy/praxis/issues/new", "default": "v0.7.2",
+            }
+            context = ExampleContext("praxis", "v0.7.2", "v0.7.2", "0123456789abcdef0123456789abcdef01234567",
+                                     config, SOURCES / "praxis", {}, {sample_path, root_config_path, tls_path},
+                                     tmp / "static", False, "", "")
+            write_example_pages(context, {
+                sample_path: raw_config,
+                root_config_path: b"a2a: true\n",
+                tls_path: b"cert_path: ./localhost+1.pem\nkey_path: ./localhost+1-key.pem\n",
+            }, set())
+            download = tmp / "static/praxis/v0.7.2/_assets" / sample_path
+            page = tmp / "docs/praxis/v0.7.2" / example_content_path(sample_path)
+            category = tmp / "docs/praxis/v0.7.2/examples/configs/traffic-management/_index.md"
+            all_configs = tmp / "docs/praxis/v0.7.2/examples/configs/_index.md"
+            tls_page = tmp / "docs/praxis/v0.7.2" / example_content_path(tls_path)
+            page_text = page.read_text(encoding="utf-8")
+            assert download.read_bytes() == raw_config
+            assert 'example_featured = true' in page_text and 'example_search = [' in page_text
+            assert 'aliases = ["/praxis/latest/examples/configs/traffic-management/basic-reverse-proxy.yaml/"]' in page_text
+            assert "{{< docs-version >}}" in page_text
+            assert "basic-reverse-proxy" in category.read_text(encoding="utf-8")
+            assert "A2A Agent Card Routing" in all_configs.read_text(encoding="utf-8")
+            tls_text = tls_page.read_text(encoding="utf-8")
+            assert "does not include them" in tls_text and "Companion resources" not in tls_text
+    finally:
+        DOCS_OUT = original_docs_out
+    check_curated_example_paths()
+
+
 def check_adapter() -> None:
     rewrite_context = {
         "product": "praxis", "version": "dev", "config": {"repo": "https://github.com/example/docs"},
@@ -866,7 +1264,7 @@ def check_adapter() -> None:
         "selected": {
             **source_context["selected"],
             "examples/configs/operations/hot-reload.yaml": "examples/configs/operations/hot-reload.yaml.md",
-            "examples/configs": "examples/_index.md",
+            "examples/configs": "examples/configs/_index.md",
         },
     }
     reference = rewrite_markdown(
@@ -875,7 +1273,7 @@ def check_adapter() -> None:
     )
     assert "[sample]: /praxis/v0.7.2/examples/configs/operations/hot-reload.yaml/ \"Example\"" in reference
     directory = rewrite_markdown("[examples](../../examples/configs/)\n", **example_context)
-    assert "](/praxis/v0.7.2/examples/)" in directory
+    assert "](/praxis/v0.7.2/examples/configs/)" in directory
     html_example = rewrite_markdown('<a href="../../examples/configs/operations/hot-reload.yaml">config</a>\n', **example_context)
     assert 'href="/praxis/v0.7.2/examples/configs/operations/hot-reload.yaml/"' in html_example
     assert example_content_path("examples/configs/item.yaml") == "examples/configs/item.yaml.md"
@@ -920,6 +1318,7 @@ def check_adapter() -> None:
 
     assert summarize("# Title\n\nA useful summary with `code` and [a link](https://example.test).\n") == "A useful summary with code and a link."
     assert slugify_heading("Dependency Policy & Review") == "dependency-policy--review"
+    check_example_catalog_adapter()
 
 
 def prepare(mode: str) -> None:
@@ -934,6 +1333,7 @@ def prepare(mode: str) -> None:
 
     products_out: dict = {}
     source_map: list[dict] = []
+    example_coverage: dict[tuple[str, str], tuple[str, dict[str, dict]]] = {}
     for product, config in source_catalog["products"].items():
         config = {**config, "repo": repository_url(product)}
         config["issues"] = config["repo"] + "/issues/new"
@@ -972,14 +1372,16 @@ def prepare(mode: str) -> None:
             examples, example_dirs, example_descriptions = linked_examples(
                 selected_source, extracted, repo=repo, sha=sha, working=False, known_paths=known_paths,
             )
-            mapping.update({
-                path: example_content_path(path)
-                for path in examples
-            })
-            if examples or example_dirs:
-                mapping["examples"] = "examples/_index.md"
-                mapping["examples/README.md"] = "examples/_index.md"
-                mapping.update({path: "examples/_index.md" for path in example_dirs})
+            examples.update(tracked_example_configs(repo, sha, working=False))
+            mapping.update(example_source_mapping(examples, example_dirs))
+            context = ExampleContext(product, version, release["label"], sha, config, repo,
+                                     example_descriptions, known_paths, STATIC_OUT, False, "", "")
+            copy_extra_assets(context)
+            example_coverage[(product, version)] = (
+                sha, {path: example_metadata(product, path, body, example_descriptions)
+                      for path, body in examples.items()
+                      if path.startswith("examples/configs/") and PurePosixPath(path).suffix.lower() in {".yaml", ".yml"}},
+            )
             for source_file in selected_source:
                 source_rel = source_file.relative_to(extracted).as_posix()
                 if source_file.suffix.lower() != ".md":
@@ -1029,10 +1431,7 @@ def prepare(mode: str) -> None:
                 entry = {"product": product, "version": version, "source_path": source_rel,
                          "content_path": output_path, "source_commit": sha, "url": site_url(product, version, output_path)}
                 source_map.append(entry)
-            source_map.extend(write_example_pages(
-                product, version, release["label"], sha, config, examples, example_dirs,
-                example_descriptions, known_paths, STATIC_OUT, False, "", "",
-            ))
+            source_map.extend(write_example_pages(context, examples, example_dirs))
             versions.append({"slug": version, "label": release["label"], "tag": release["tag"],
                              "sha": sha, "default": release["default"]})
 
@@ -1052,19 +1451,21 @@ def prepare(mode: str) -> None:
         examples, example_dirs, example_descriptions = linked_examples(
             source_files, repo, repo=repo, sha=dev_sha, working=True, known_paths=known_paths,
         )
-        mapping.update({
-            path: example_content_path(path)
-            for path in examples
-        })
-        if examples or example_dirs:
-            mapping["examples"] = "examples/_index.md"
-            mapping["examples/README.md"] = "examples/_index.md"
-            mapping.update({path: "examples/_index.md" for path in example_dirs})
+        examples.update(tracked_example_configs(repo, dev_sha, working=True))
+        mapping.update(example_source_mapping(examples, example_dirs))
         edit_branch = branch
         if not edit_branch:
             result = subprocess.run(["git", "-C", str(repo), "symbolic-ref", "--quiet", "--short", "refs/remotes/origin/HEAD"],
                                     text=True, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
             edit_branch = result.stdout.strip().removeprefix("origin/") if result.returncode == 0 else ""
+        context = ExampleContext(product, "dev", dev_label, dev_sha, config, repo,
+                                 example_descriptions, known_paths, STATIC_OUT, True, source_status, edit_branch)
+        copy_extra_assets(context)
+        example_coverage[(product, "dev")] = (
+            dev_sha, {path: example_metadata(product, path, body, example_descriptions)
+                      for path, body in examples.items()
+                      if path.startswith("examples/configs/") and PurePosixPath(path).suffix.lower() in {".yaml", ".yml"}},
+        )
         for source_file in source_files:
             source_rel = source_file.relative_to(repo).as_posix()
             if source_file.suffix.lower() != ".md":
@@ -1112,10 +1513,7 @@ def prepare(mode: str) -> None:
             source_map.append({"product": product, "version": version, "source_path": source_rel,
                                "content_path": output_path, "source_commit": dev_sha,
                                "url": site_url(product, version, output_path), "dirty": bool(source_status)})
-        source_map.extend(write_example_pages(
-            product, version, dev_label, dev_sha, config, examples, example_dirs,
-            example_descriptions, known_paths, STATIC_OUT, True, source_status, edit_branch,
-        ))
+        source_map.extend(write_example_pages(context, examples, example_dirs))
         versions.append({"slug": "dev", "label": dev_label, "sha": dev_sha, "default": False})
         products_out[product] = {**config, "versions": versions}
         print(f"{product}: dev {dev_sha[:12]}" + (" (dirty preview)" if source_status else ""))
@@ -1124,6 +1522,7 @@ def prepare(mode: str) -> None:
         json.dumps({"products": products_out}, indent=2) + "\n", encoding="utf-8"
     )
     (DATA_OUT / "docs_sources.json").write_text(json.dumps(source_map, indent=2) + "\n", encoding="utf-8")
+    write_example_coverage_report(source_catalog, example_coverage)
 
 
 def update_docs(product: str, ref: str) -> None:

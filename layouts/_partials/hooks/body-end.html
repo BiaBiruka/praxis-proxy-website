@@ -1,1 +1,24 @@
 {{ partial "praxis-search-assets.html" . }}
+{{- if .HasShortcode "flow-walkthrough" -}}
+{{- $player := resources.Get "js/flow-walkthrough.js" -}}
+{{- if hugo.IsProduction }}{{ $player = $player | minify | fingerprint }}{{ end -}}
+<script type="module">
+  const url = {{ $player.RelPermalink }};
+  for (const panel of document.querySelectorAll('details[data-flow-walkthrough]')) {
+    let initialized = false;
+    panel.addEventListener('toggle', async () => {
+      if (!panel.open || initialized) return;
+      initialized = true;
+      try {
+        const player = await import(url);
+        player.init(panel);
+      } catch (_) {
+        const message = document.createElement('p');
+        message.textContent = 'Interactive controls could not load. Read the complete steps below, or reload this page to try again.';
+        message.setAttribute('role', 'status');
+        panel.append(message);
+      }
+    });
+  }
+</script>
+{{- end -}}

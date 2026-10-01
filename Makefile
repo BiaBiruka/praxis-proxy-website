@@ -39,6 +39,7 @@ build:
 
 build-in-container: init-in-container
 	python3 tools/docs.py prepare --mode build
+	python3 tools/prepare-routes.py
 	$(HUGO_ENV) $(HUGO) $(HUGO_ARGS) --environment production --minify --cleanDestinationDir --destination "$(HUGO_DESTINATION)"
 
 serve:
@@ -46,6 +47,7 @@ serve:
 
 serve-in-container: init-in-container
 	python3 tools/docs.py prepare --mode serve
+	python3 tools/prepare-routes.py
 	$(HUGO_ENV) $(HUGO) $(HUGO_ARGS) server --destination .cache/serve-public --baseURL http://localhost:1313/ --bind 0.0.0.0 --disableFastRender
 
 check:
@@ -54,7 +56,7 @@ check:
 check-in-container: build-in-container
 	python3 tools/docs.py check-adapter
 	python3 tools/check-presentation.py --public "$(HUGO_DESTINATION)"
-	npm run check-links -- '**/*.html' --server-root "$(HUGO_DESTINATION)" --recurse --check-fragments --check-css --skip 'https?://(?!localhost(?=[:/])|127[.]0[.]0[.]1(?=[:/])).*'
+	python3 tools/check-links.py "$(HUGO_DESTINATION)"
 
 update-docs:
 	$(CONTAINER_MAKE) update-docs-in-container PRODUCT="$(PRODUCT)" REF="$(REF)"

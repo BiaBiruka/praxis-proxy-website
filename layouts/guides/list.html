@@ -8,7 +8,7 @@
     {{ .Content }}
     <nav aria-label="Guides">
       <ul>
-        {{- range .RegularPages.ByTitle }}
+        {{- range .Pages.ByWeight }}
         <li>
           <a href="{{ .RelPermalink }}">{{ .Title }}</a>
           {{ with .Description }}<p>{{ . }}</p>{{ end }}

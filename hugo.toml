@@ -40,7 +40,7 @@ enableGitInfo = false
   unsafe = true
 
 [params]
-  description = "Documentation for the Praxis proxy framework, Praxis AI gateway, and Praxis Policy Engine."
+  description = "Run and configure the Praxis proxy, connect AI services with Praxis AI, and enforce access with Praxis Policy Engine."
   offlineSearch = false
   images = ["images/praxis-social.png"]
   github_repo = "https://github.com/praxis-proxy/praxis-proxy.github.io"

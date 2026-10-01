@@ -1,9 +1,9 @@
 {{- $products := hugo.Data.docs_build_versions.products -}}
 {{- $navigation := hugo.Data.docs_navigation.products -}}
 {{- $order := slice "praxis" "ai" "policy" -}}
-{{- $titles := dict "praxis" "Configure proxy behavior" "ai" "Send requests to AI services" "policy" "Control access to tools and data" -}}
+{{- $titles := dict "praxis" "Run an HTTP or TCP proxy" "ai" "Send requests to AI services" "policy" "Control access to tools and data" -}}
 {{- $descriptions := dict "praxis" "Choose where requests go and add header or security rules with built-in filters." "ai" "Route model and agent traffic through a gateway connected to AI providers." "policy" "Decide who can do what, pass identity between services, and limit data exposure." -}}
-{{- $prerequisites := dict "praxis" "Builds with Rust/Cargo and Make. The proxy example uses an upstream at 127.0.0.1:3000; the quickstart explains the opt-in required when that backend is local." "ai" "Builds with Rust/Cargo and Make. The quickstart uses an OpenAI API key and the gpt-4o model, with access to api.openai.com:443." "policy" "Requires Rust 1.92 or newer (install with rustup; the repository pins its toolchain). The quickstart walks through its included authorization and redaction scenario." -}}
+{{- $prerequisites := dict "praxis" "Run the verified Linux/amd64 container, or build the selected source with Rust. The first proxy tutorial uses a local backend and explains the required development opt-in." "ai" "Builds with Rust/Cargo and Make. The quickstart uses an OpenAI API key and the gpt-4o model, with access to api.openai.com:443." "policy" "Requires Rust 1.92 or newer (install with rustup; the repository pins its toolchain). The quickstart walks through its included authorization and redaction scenario." -}}
 {{- $showPrerequisites := eq (.Get "prerequisites") "true" -}}
 <section class="home-section home-tasks" aria-labelledby="task-chooser-title">
   <div class="home-section__heading">
@@ -29,9 +29,11 @@
       {{- if $showPrerequisites }}
       <p class="task-card__prerequisite"><strong>Prerequisites:</strong> {{ index $prerequisites $id }}</p>
       {{- end }}
-      {{- with index $startPages 0 -}}
+      {{- if eq $id "praxis" -}}
+      <a class="task-card__action" href="{{ "guides/first-proxy/" | relURL }}">Run your first proxy <span aria-hidden="true">→</span></a>
+      {{- else -}}{{- with index $startPages 0 -}}
       <a class="task-card__action" href="{{ .RelPermalink }}">Get started: {{ .Title }} <span aria-hidden="true">→</span></a>
-      {{- end -}}
+      {{- end -}}{{- end -}}
       {{- $tutorialPages := sort (where $productPages "Params.reader_need" "Tutorial") "Params.order" -}}
       {{- with index $tutorialPages 0 -}}
         {{- if ne .RelPermalink $startHref -}}

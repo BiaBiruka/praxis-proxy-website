@@ -26,11 +26,19 @@
         {{- $heading := . | plainify | htmlUnescape | strings.TrimSpace -}}
         {{- $headings = $headings | append $heading -}}
       {{- end -}}
+      {{- $body := $page.Plain | htmlUnescape -}}
+      {{- if $page.Params.example_category -}}
+        {{- $body = delimit ($page.Params.example_search | default (slice $page.Description)) " " -}}
+        {{- $headings = slice ($page.Params.example_task | default "Configuration example") ($page.Params.example_category | default "") -}}
+      {{- else if or $page.Params.example_catalog $page.Params.example_catalog_category -}}
+        {{- $body = $page.Description -}}
+        {{- $headings = slice -}}
+      {{- end -}}
       {{- $doc := dict
         "ref" $page.RelPermalink
         "title" $page.Title
         "description" ($page.Description | default "")
-        "body" ($page.Plain | htmlUnescape)
+        "body" $body
         "headings" $headings
         "product" $product
         "product_name" (cond (ne $product "") (index (index $.products $product) "name") "Praxis ecosystem")

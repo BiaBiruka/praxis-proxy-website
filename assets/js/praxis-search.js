@@ -269,7 +269,7 @@
     button.dataset.diagramType = type;
     diagramSources.set(button, source);
     source.dataset.praxisDiagramZoomed = "true";
-    const placement = type === "image" ? (source.closest("a") || source) : source;
+    const placement = type === "image" ? (source.closest(".guide-figure__scroll") || source.closest("a") || source) : source;
     placement.insertAdjacentElement("afterend", button);
   }
 

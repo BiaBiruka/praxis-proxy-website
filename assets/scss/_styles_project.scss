@@ -62,6 +62,7 @@
 }
 
 html { scroll-behavior: smooth; }
+html[data-bs-theme='dark'] { color-scheme: dark; }
 @media (min-width: 768px) {
   // Docsy reserves navbar space for docs, but our landing templates use its default main.
   .td-default > .td-main { padding-top: $td-navbar-min-height; }
@@ -131,7 +132,7 @@ body.guides-page #main-content .td-content { max-width: 48rem; min-width: 0; }
 .td-navbar .praxis-navbar-collapse .navbar-nav { flex-direction: column !important; align-items: stretch !important; white-space: normal; }
 .td-navbar .praxis-navbar-toggle { display: inline-flex !important; }
 .praxis-skip-link:focus { position: fixed; z-index: 2000; top: 0.75rem; left: 0.75rem; padding: 0.65rem 0.9rem; border: 2px solid var(--praxis-accent); border-radius: 0.35rem; background: var(--praxis-panel); color: var(--praxis-text); }
-@media (min-width: 992px) {
+@media (min-width: 1200px) {
   .td-navbar .navbar-brand { margin-right: 1rem; }
   .praxis-navbar-collapse { order: 2; margin-left: auto; }
   .praxis-navbar-collapse .navbar-nav { margin-left: 0; }
@@ -249,6 +250,35 @@ body.guides-page #main-content .td-content { max-width: 48rem; min-width: 0; }
 .product-journey-group { margin-top: 2rem; }
 .product-journey-group h3 { font-size: 1.1rem; }
 .product-links { display: flex; flex-wrap: wrap; gap: 1rem; margin-top: 2rem; padding-top: 1.25rem; border-top: 1px solid var(--praxis-border); font-size: 0.94rem; }
+.project-task-paths { display: flex; flex-wrap: wrap; gap: 0.75rem 1.25rem; margin: 1.5rem 0 2rem; }
+.project-task-paths a { display: inline-flex; align-items: center; min-height: 44px; }
+.guide-figure { margin: 2rem 0; }
+.guide-figure__scroll { max-width: 100%; overflow: auto; border: 1px solid var(--praxis-border); border-radius: 0.6rem; background: #fff; }
+.guide-figure img { display: block; width: 100%; height: auto; }
+.guide-figure--flow img { min-width: 64rem; }
+.guide-figure__scroll:focus-visible { outline: 3px solid var(--praxis-accent); outline-offset: 3px; }
+.guide-figure__hint { display: none; }
+@media (max-width: 1100px) { .guide-figure__hint { display: inline; } }
+.guide-figure figcaption { color: var(--praxis-muted); margin-top: 0.65rem; font-size: 0.9rem; }
+.example-directory > section { padding: 1.5rem 0; border-top: 1px solid var(--praxis-border); }
+.example-starting-list { padding-left: 1.2rem; }
+.example-starting-list li { margin: 0.8rem 0; }
+.example-starting-list p { color: var(--praxis-muted); margin: 0.2rem 0; font-size: 1rem; }
+.flow-walkthrough { margin: 2rem 0; }
+.flow-walkthrough details { padding: 1rem; border: 1px solid var(--praxis-border); border-radius: 0.6rem; background: var(--praxis-panel); }
+.flow-walkthrough summary { min-height: 44px; cursor: pointer; font-weight: 600; }
+.flow-walkthrough__view { max-width: 100%; overflow: auto; border: 1px solid var(--praxis-border); border-radius: 0.5rem; background: #f5f7fb; }
+.flow-walkthrough__view svg { display: block; width: 100%; min-width: 48rem; height: auto; }
+.flow-walkthrough__controls { margin-top: 1rem; }
+.flow-walkthrough__controls fieldset { margin-bottom: 0.75rem; }
+.flow-walkthrough__controls legend { font-size: 1rem; font-weight: 600; }
+.flow-walkthrough__controls label { display: flex; align-items: center; gap: 0.55rem; min-height: 44px; cursor: pointer; }
+.flow-walkthrough__buttons { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.flow-walkthrough__buttons button { min-height: 44px; padding: 0.4rem 0.8rem; border: 1px solid var(--praxis-border); border-radius: 0.35rem; color: var(--praxis-text); background: var(--praxis-bg); }
+.flow-walkthrough__buttons button:hover:not(:disabled) { border-color: var(--praxis-accent); }
+.flow-walkthrough__buttons button:disabled { opacity: 0.6; }
+.flow-walkthrough [data-flow-status] { margin-top: 1rem; }
+.flow-walkthrough [aria-current='step'] { padding-inline-start: 0.5rem; border-inline-start: 3px solid var(--praxis-accent); font-weight: 600; }
 
 .site-page > .start-page, .site-page > .docs-page, .site-page > .community-page { max-width: 76rem; margin: 0 auto; padding: 3rem 1.25rem 5rem; }
 .site-page > article:not(.product-overview-page) > header { max-width: 54rem; margin: 0 auto 2.5rem; text-align: center; }
@@ -317,6 +347,20 @@ body.guides-page #main-content .td-content { max-width: 48rem; min-width: 0; }
 .docs-sidebar-item > a { display: block; padding: 0.28rem 0.55rem; border-left: 2px solid transparent; border-radius: 0 0.25rem 0.25rem 0; color: var(--praxis-muted); font-weight: 400; letter-spacing: normal; line-height: 1.4; text-decoration: none; text-transform: none; }
 .docs-sidebar-item > a:hover { color: var(--praxis-accent); }
 .docs-sidebar-item.active > a { border-left-color: var(--praxis-accent); background: color-mix(in srgb, var(--praxis-accent) 10%, transparent); color: var(--praxis-accent); font-weight: 600; }
+.examples-sidebar__nav ul { margin: 0; padding-left: 0.8rem; list-style: none; }
+.examples-sidebar__nav li { min-width: 0; list-style: none; }
+.examples-sidebar__nav a { display: block; min-width: 0; padding: 0.35rem 0.55rem; border-left: 1px solid transparent; border-radius: 0 0.25rem 0.25rem 0; color: var(--praxis-muted); line-height: 1.4; text-decoration: none; overflow-wrap: anywhere; }
+.examples-sidebar__nav a:hover { color: var(--praxis-accent); }
+.examples-sidebar__nav .active > a { border-left: 1px solid var(--praxis-accent); background: color-mix(in srgb, var(--praxis-accent) 10%, transparent); color: var(--praxis-accent); font-weight: 600; }
+.examples-sidebar__nav .active-path > a { color: var(--praxis-accent); font-weight: 600; }
+.examples-sidebar__category-browser > details > summary,
+.examples-sidebar__example-group > details > summary { min-height: 44px; padding: 0.35rem 0.55rem; color: var(--praxis-text); cursor: pointer; font-weight: 600; }
+.examples-sidebar__example-group { margin-top: 0.25rem; }
+@media (max-width: 767.98px) {
+  .examples-sidebar__nav a,
+  .examples-sidebar__category-browser > details > summary,
+  .examples-sidebar__example-group > details > summary { min-height: 44px; padding-block: 0.65rem; }
+}
 .docs-version-fallback { margin: 0.8rem 0; padding: 0.65rem 0.75rem; border-left: 3px solid var(--praxis-accent); background: var(--praxis-panel); color: var(--praxis-muted); font-size: 0.86rem; }
 .docs-contribution-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem; margin: 1.5rem 0; padding: 0.75rem 0; border-top: 1px solid var(--praxis-border); border-bottom: 1px solid var(--praxis-border); font-size: 0.85rem; }
 .docs-contribution-meta a { color: var(--praxis-muted); }
@@ -368,6 +412,8 @@ body.guides-page #main-content .td-content { max-width: 48rem; min-width: 0; }
 .praxis-404 p { max-width: 48ch; color: var(--praxis-muted); font-size: 1.1rem; }
 
 @media (max-width: 767.98px) {
+  .td-sidebar-nav { margin-inline: 0; }
+  .examples-sidebar__nav { max-height: 60vh; overflow-y: auto; }
   .td-navbar { position: relative; }
   .home-hero { grid-template-columns: minmax(0, 1fr); padding-top: 3rem; gap: 2rem; }
   .home-hero h1 { max-width: 16ch; font-size: clamp(2rem, 9vw, 2.6rem); }

@@ -1,10 +1,14 @@
 {{- $page := .context -}}
-{{- if and $page.Params.product $page.Params.version -}}
+{{- if eq $page.Params.topic "Examples" -}}
+  {{- partial "sidebar-examples.html" (dict "context" $page) -}}
+{{- else if and $page.Params.product $page.Params.version -}}
   {{- $productID := $page.Params.product -}}
   {{- $version := $page.Params.version -}}
   {{- $navigation := index hugo.Data.docs_navigation.products $productID -}}
   {{- $allDocs := where site.Pages "Params.product" $productID -}}
   {{- $allDocs = where $allDocs "Params.version" $version -}}
+  {{- $exampleCatalogs := where $allDocs "Params.example_catalog" true -}}
+  {{- $allDocs = where $allDocs "Params.topic" "ne" "Examples" -}}
   {{- $startPages := where $allDocs "Params.source_path" $navigation.start -}}
   {{- $misc := slice -}}
   {{- range $allDocs -}}
@@ -22,6 +26,11 @@
         {{- range $startPages }}
         <li class="docs-sidebar-get-started{{ if eq .RelPermalink $page.RelPermalink }} active{{ end }}">
           <a href="{{ .RelPermalink }}"{{ if eq .RelPermalink $page.RelPermalink }} aria-current="page"{{ end }}>Get started</a>
+        </li>
+        {{- end }}
+        {{- range $exampleCatalogs }}
+        <li class="docs-sidebar-get-started{{ if eq $page.Params.topic "Examples" }} active{{ end }}">
+          <a href="{{ .RelPermalink }}"{{ if eq .RelPermalink $page.RelPermalink }} aria-current="page"{{ end }}>Configuration examples</a>
         </li>
         {{- end }}
         {{- range $navigation.groups }}
