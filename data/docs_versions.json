@@ -66,9 +66,11 @@
       "name": "Praxis AI",
       "description": "An AI gateway built on the Praxis proxy runtime.",
       "content_root": "docs",
-      "default": "v0.4.1",
+      "default": "v0.5.0",
       "status": "Praxis AI is alpha software; APIs and configuration may change before v1.0.0.",
-      "extra_assets": ["assets/praxis-ai-architecture.svg"],
+      "extra_assets": [
+        "assets/praxis-ai-architecture.svg"
+      ],
       "include": [
         "docs/README.md",
         "docs/quickstart.md",
@@ -98,11 +100,18 @@
       ],
       "releases": [
         {
+          "version": "v0.5.0",
+          "label": "v0.5.0 (alpha)",
+          "tag": "v0.5.0",
+          "sha": "2f8732c1389b889660bcb3495af4d4d28dd4e682",
+          "default": true
+        },
+        {
           "version": "v0.4.1",
           "label": "v0.4.1 (alpha)",
           "tag": "v0.4.1",
           "sha": "b9d6016764888e02dc049ec088496b10b7e886c1",
-          "default": true
+          "default": false
         },
         {
           "version": "v0.4.0",

@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import html
 import json
+import os
 import re
 import shutil
 import subprocess
@@ -13,7 +14,9 @@ import tarfile
 import tempfile
 from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
+from urllib.error import HTTPError, URLError
 from urllib.parse import quote, unquote, urlsplit, urlunsplit
+from urllib.request import Request, urlopen
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -141,6 +144,138 @@ def check_catalog_objects(*, fetch: bool) -> None:
             actual = git(repo, "rev-parse", f"{tag}^{{commit}}")
             if actual != release["sha"]:
                 raise RuntimeError(f"{product} {tag} resolved to {actual}, catalog records {release['sha']}")
+
+
+def latest_release_tag(product: str) -> str | None:
+    parsed = urlsplit(repository_url(product))
+    if parsed.hostname != "github.com":
+        raise RuntimeError(f"{product} release checks require a GitHub source repository")
+    owner, separator, repo = parsed.path.strip("/").partition("/")
+    if not separator or not owner or not repo:
+        raise RuntimeError(f"could not read the GitHub repository for {product}: {parsed.geturl()}")
+    endpoint = "https://api.github.com/repos/{}/{}/releases".format(
+        quote(owner, safe=""), quote(repo.removesuffix(".git"), safe="")
+    )
+    headers = {
+        "Accept": "application/vnd.github+json",
+        "User-Agent": "praxis-website-docs",
+        "X-GitHub-Api-Version": "2026-03-10",
+    }
+    token = os.environ.get("GITHUB_TOKEN") or os.environ.get("GH_TOKEN")
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
+    page = 1
+    while True:
+        request = Request(f"{endpoint}?per_page=100&page={page}", headers=headers)
+        try:
+            with urlopen(request, timeout=20) as response:
+                releases = json.load(response)
+        except HTTPError as error:
+            raise RuntimeError(f"GitHub release lookup failed for {product} (HTTP {error.code})") from error
+        except (URLError, TimeoutError, json.JSONDecodeError, UnicodeDecodeError) as error:
+            raise RuntimeError(f"GitHub release lookup failed for {product}: {error}") from error
+        if not isinstance(releases, list):
+            raise RuntimeError(f"GitHub returned an invalid release list for {product}")
+        for release in releases:
+            if not isinstance(release, dict) or release.get("draft") or release.get("prerelease"):
+                continue
+            tag = release.get("tag_name")
+            if not isinstance(tag, str) or not RELEASE_TAG.fullmatch(tag):
+                raise RuntimeError(f"GitHub returned an invalid latest release tag for {product}: {tag!r}")
+            return tag
+        if len(releases) < 100:
+            return None
+        page += 1
+
+
+def check_release_versions() -> None:
+    products = catalog()["products"]
+    failures: list[str] = []
+    for product, config in products.items():
+        try:
+            latest = latest_release_tag(product)
+        except RuntimeError as error:
+            failures.append(str(error))
+            continue
+        if latest is None:
+            current = next(release for release in config["releases"] if release["default"])
+            print(f"{product}: no published stable release; keeping docs default {current['tag']}.")
+            continue
+        current = next(release for release in config["releases"] if release["default"])
+        if current["tag"] != latest or current["version"] != latest or config["default"] != latest:
+            failures.append(
+                f"{product}: docs default is {current['version']} ({current['tag']}), but GitHub's latest published stable release is {latest}; "
+                "run `make update-doc-versions` and review the catalog and source pointers"
+            )
+        else:
+            print(f"{product}: docs default {current['tag']} matches the latest published release.")
+    if failures:
+        raise RuntimeError("\n".join(failures))
+
+
+def update_doc_versions() -> None:
+    data = catalog()
+    products = data["products"]
+    updates: dict[str, tuple[str, str, Path]] = {}
+    skipped: list[str] = []
+
+    for product, config in products.items():
+        repo = SOURCES / product
+        if not (repo / ".git").exists():
+            raise RuntimeError(f"{product} source is not initialized; run `make init` first")
+        if git(repo, "status", "--porcelain=v1", "--untracked-files=all"):
+            raise RuntimeError(f"{product} source checkout is dirty; preserve or commit its changes before updating")
+        tag = latest_release_tag(product)
+        if tag is None:
+            current = next(release for release in config["releases"] if release["default"])
+            skipped.append(f"{product}: no published stable release; kept {current['tag']}")
+            continue
+        run(["git", "-C", str(repo), "fetch", "--depth=1", "origin", f"refs/tags/{tag}:refs/tags/{tag}"])
+        sha = git(repo, "rev-parse", f"{tag}^{{commit}}")
+        existing = next((release for release in config["releases"] if release["tag"] == tag), None)
+        if existing and existing["sha"] != sha:
+            raise RuntimeError(f"{product} {tag} resolves to {sha}, catalog records {existing['sha']}")
+        if existing and existing["version"] != tag:
+            raise RuntimeError(f"{product} catalog maps {tag} to version {existing['version']}; review that mapping manually")
+        for required in config["required"]:
+            result = subprocess.run(
+                ["git", "-C", str(repo), "cat-file", "-e", f"{sha}:{required}"],
+                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+            )
+            if result.returncode:
+                raise RuntimeError(f"{product} {tag} is missing required docs path {required}")
+        updates[product] = (tag, sha, repo)
+
+    changed: list[str] = []
+    for product, (tag, sha, repo) in updates.items():
+        config = products[product]
+        current = next(release for release in config["releases"] if release["default"])
+        source_was_current = git(repo, "rev-parse", "HEAD") == sha
+        release = next((item for item in config["releases"] if item["tag"] == tag), None)
+        if release is None:
+            suffix = ""
+            if current["label"].startswith(current["version"]):
+                suffix = current["label"][len(current["version"]):]
+            release = {"version": tag, "label": tag + suffix, "tag": tag, "sha": sha, "default": False}
+            config["releases"].append(release)
+        config["default"] = release["version"]
+        for item in config["releases"]:
+            item["default"] = item["tag"] == tag
+        config["releases"].sort(key=lambda item: item["tag"] != tag)
+        if not source_was_current:
+            run(["git", "-C", str(repo), "checkout", "--detach", sha])
+        if current["tag"] != tag:
+            changed.append(f"{product}: {current['tag']} -> {tag} ({sha})")
+        elif not source_was_current:
+            changed.append(f"{product}: source pointer -> {tag} ({sha})")
+
+    CATALOG.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
+    if changed:
+        print("Updated documentation versions:\n" + "\n".join(changed))
+    elif not skipped:
+        print("Documentation defaults already match the latest published releases.")
+    if skipped:
+        print("Skipped projects without a published stable release:\n" + "\n".join(skipped))
 
 
 def init() -> None:
@@ -1242,6 +1377,7 @@ def check_example_catalog_adapter() -> None:
             config = {
                     "name": "Praxis", "repo": "https://github.com/praxis-proxy/praxis",
                     "issues": "https://github.com/praxis-proxy/praxis/issues/new", "default": "v0.7.2",
+                    "releases": [{"version": "v0.7.2", "tag": "v0.7.2"}],
             }
             context = ExampleContext("praxis", "v0.7.2", "v0.7.2", "0123456789abcdef0123456789abcdef01234567",
                                      config, SOURCES / "praxis", {}, {sample_path, root_config_path, tls_path},
@@ -1613,6 +1749,8 @@ def main() -> None:
     commands = parser.add_subparsers(dest="command", required=True)
     commands.add_parser("init")
     commands.add_parser("check-adapter")
+    commands.add_parser("check-release-versions")
+    commands.add_parser("update-doc-versions")
     prepare_parser = commands.add_parser("prepare")
     prepare_parser.add_argument("--mode", choices=("build", "serve"), required=True)
     for name in ("update-docs", "add-docs-version"):
@@ -1626,6 +1764,10 @@ def main() -> None:
         elif args.command == "check-adapter":
             check_adapter()
             print("Documentation adapter checks passed.")
+        elif args.command == "check-release-versions":
+            check_release_versions()
+        elif args.command == "update-doc-versions":
+            update_doc_versions()
         elif args.command == "prepare":
             prepare(args.mode)
         elif args.command == "update-docs":

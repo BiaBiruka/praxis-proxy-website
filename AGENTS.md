@@ -29,9 +29,11 @@ ownership decisions.
   guidance](https://www.docsy.dev/docs/content/lookandfeel/) before changing
   theme presentation.
 - `data/docs_versions.json` independently selects each project's releases
-  and default. Adding a source release does not promote it. Verify the exact
-  selected source and its documentation before changing a default; matching
-  version numbers do not establish cross-project compatibility.
+  and default. `make check-doc-versions` compares defaults with the latest
+  published stable releases; `make update-doc-versions` validates required
+  docs, adds missing snapshots, promotes those defaults, and moves the source
+  submodule pointers. Review its catalog and pointer changes before committing.
+  Matching version numbers do not establish cross-project compatibility.
 - `data/docs_navigation.json` maps source pages to Diátaxis reader needs,
   topics, order, summaries, and related links. Update metadata when an
   imported page's site grouping or label changes; do not duplicate that logic

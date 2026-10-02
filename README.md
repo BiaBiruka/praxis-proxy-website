@@ -9,7 +9,7 @@ For documentation and website contributions, read [AGENTS.md](AGENTS.md) for sou
 - Docker Engine with Docker Compose v2
 - GNU Make
 
-The container uses the official Hugo Extended 0.164.0 image and supplies the remaining build tools. Docsy 0.17.0, Dart Sass 1.102.0, and Linkinator are pinned by the website manifests. Initialization points Hugo's `sass` command at the locked platform executable. See the [Docsy setup guide](https://www.docsy.dev/docs/get-started/docsy-as-module/installation-prerequisites/) and [0.17.0 release notes](https://www.docsy.dev/blog/2026/0.17.0/).
+The container uses the official Hugo Extended 0.167.0 image and supplies the remaining build tools. Dependabot checks Docker, Go modules, npm workspaces, and GitHub Actions weekly. Docsy 0.17.0, Dart Sass 1.102.0, and Linkinator are pinned by the website manifests. Initialization points Hugo's `sass` command at the locked platform executable. The lightweight version freshness check uses host Python 3 and the GitHub API. See the [Docsy setup guide](https://www.docsy.dev/docs/get-started/docsy-as-module/installation-prerequisites/) and [0.17.0 release notes](https://www.docsy.dev/blog/2026/0.17.0/).
 
 ## Build and preview
 
@@ -35,7 +35,15 @@ HUGO_BASEURL=https://docs.example.com/ make build
 
 ## Source revisions and releases
 
-`sources/{praxis,ai,policy}` are read-only documentation inputs. Git records their working revisions as submodule pointers. Release commits and defaults are in [`data/docs_versions.json`](data/docs_versions.json); each product is versioned independently. Adding a release does not promote it:
+`sources/{praxis,ai,policy}` are read-only documentation inputs. Git records their working revisions as submodule pointers. Release commits and defaults are in [`data/docs_versions.json`](data/docs_versions.json); each project is versioned independently. CI checks each default against that repository's latest published stable GitHub release. Run the check locally with `make check-doc-versions`; it uses the public GitHub API.
+
+After `make init` has initialized the source submodules, add the latest published stable release for each project, validate its required docs, promote it, and move the matching source pointers together with:
+
+```sh
+make update-doc-versions
+```
+
+Review the catalog and submodule changes before committing; the source pointer changes remain unstaged. The manual command for adding a selected archived version still leaves it non-default:
 
 ```sh
 make add-docs-version PRODUCT=policy REF=v0.4.1
