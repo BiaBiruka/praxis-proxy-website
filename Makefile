@@ -59,7 +59,7 @@ check-in-container: build-in-container
 	python3 tools/docs.py check-adapter
 	python3 tools/check-presentation.py --public "$(HUGO_DESTINATION)"
 	npm run check-links -- "**/*.html" --server-root "$(HUGO_DESTINATION)" \
-		--check-fragments --check-css --timeout 15000 --verbosity error \
+		--check-fragments --check-css --timeout 15000 --concurrency 10 --verbosity error \
 		--skip 'https?://(?!localhost(?=[:/])|127[.]0[.]0[.]1(?=[:/])).*'
 
 check-doc-versions:
