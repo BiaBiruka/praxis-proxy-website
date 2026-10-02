@@ -6,7 +6,7 @@ HUGO_DESTINATION ?= public
 CONTAINER_USER = --user $(shell id -u):$(shell id -g)
 CONTAINER_MAKE = docker compose run --build --rm $(CONTAINER_USER) website make HUGO_DESTINATION="$(HUGO_DESTINATION)"
 
-.PHONY: help init init-in-container build build-in-container serve serve-in-container check check-in-container update-docs update-docs-in-container add-docs-version add-docs-version-in-container clean
+.PHONY: help init init-in-container build build-in-container serve serve-in-container check check-in-container check-doc-versions update-doc-versions update-doc-versions-in-container update-docs update-docs-in-container add-docs-version add-docs-version-in-container clean
 
 help:
 	@printf '%s\n' \
@@ -14,6 +14,8 @@ help:
 	  'build              Prepare every docs snapshot and build the complete site' \
 	  'serve              Preview docs, including local source edits and revision state' \
 	  'check              Build and check generated internal links and fragments' \
+	  'check-doc-versions Verify catalog defaults match the latest published releases' \
+	  'update-doc-versions Refresh defaults and source pointers from latest releases' \
 	  'update-docs PRODUCT=policy REF=<tag-or-commit>' \
 	  'add-docs-version PRODUCT=policy REF=<release-tag>' \
 	  'clean              Remove generated site output, keeping sources and authored files'
@@ -56,7 +58,18 @@ check:
 check-in-container: build-in-container
 	python3 tools/docs.py check-adapter
 	python3 tools/check-presentation.py --public "$(HUGO_DESTINATION)"
-	python3 tools/check-links.py "$(HUGO_DESTINATION)"
+	npm run check-links -- "**/*.html" --server-root "$(HUGO_DESTINATION)" \
+		--check-fragments --check-css --timeout 15000 --verbosity error \
+		--skip 'https?://(?!localhost(?=[:/])|127[.]0[.]0[.]1(?=[:/])).*'
+
+check-doc-versions:
+	python3 tools/docs.py check-release-versions
+
+update-doc-versions:
+	$(CONTAINER_MAKE) update-doc-versions-in-container
+
+update-doc-versions-in-container:
+	python3 tools/docs.py update-doc-versions
 
 update-docs:
 	$(CONTAINER_MAKE) update-docs-in-container PRODUCT="$(PRODUCT)" REF="$(REF)"
