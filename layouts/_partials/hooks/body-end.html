@@ -1,4 +1,7 @@
 {{ partial "praxis-search-assets.html" . }}
+{{- $motion := resources.Get "js/praxis-motion.js" -}}
+{{- if hugo.IsProduction }}{{ $motion = $motion | minify | fingerprint }}{{ end -}}
+<script defer src="{{ $motion.RelPermalink }}"></script>
 {{- if .HasShortcode "flow-walkthrough" -}}
 {{- $player := resources.Get "js/flow-walkthrough.js" -}}
 {{- if hugo.IsProduction }}{{ $player = $player | minify | fingerprint }}{{ end -}}

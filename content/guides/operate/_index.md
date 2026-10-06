@@ -2,6 +2,7 @@
 title = "Configure and operate Praxis"
 description = "Find release-specific guidance for routing, TLS, security, health, observability, and reloads."
 type = "guides"
+weight = 40
 body_class = "guides-page"
 +++
 

@@ -2,6 +2,7 @@
 title = "Install and run Praxis"
 description = "Install Praxis and send a request through your first proxy."
 type = "guides"
+weight = 20
 body_class = "guides-page"
 reader_need = "How-to"
 topic = "Installation"

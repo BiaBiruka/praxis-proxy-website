@@ -1,0 +1,25 @@
+<section class="home-section gateway-spotlight" aria-labelledby="gateway-title" data-motion-scene>
+  <div class="gateway-spotlight__copy">
+    <p class="home-section__eyebrow">Built for AI workflows</p>
+    <h2 id="gateway-title">Keep your clients.<br>Choose your backend.</h2>
+    <p>Put Praxis AI between coding agents and inference. Route model traffic, translate supported API formats, and bring tools into the request flow.</p>
+    <p class="gateway-spotlight__clients">Codex <span aria-hidden="true">/</span> Claude Code <span aria-hidden="true">/</span> Your application</p>
+    <a class="gateway-spotlight__link" href="{{ "ai/" | relURL }}">Explore the AI gateway <span aria-hidden="true">↗</span></a>
+  </div>
+  <div class="gateway-spotlight__protocols" aria-label="Praxis AI capability areas">
+    <div class="protocol-row"><span class="protocol-row__number">01</span><div><strong>OpenAI Responses</strong><code>POST /v1/responses</code></div><span class="protocol-row__mark" aria-hidden="true">↗</span></div>
+    <div class="protocol-row"><span class="protocol-row__number">02</span><div><strong>Anthropic Messages</strong><code>POST /v1/messages</code></div><span class="protocol-row__mark" aria-hidden="true">↗</span></div>
+    <div class="protocol-row"><span class="protocol-row__number">03</span><div><strong>Tools &amp; agent workflows</strong><span>MCP routing · A2A · agentic loops</span></div><span class="protocol-row__mark" aria-hidden="true">↗</span></div>
+    <div class="gateway-loop" aria-labelledby="gateway-loop-title">
+      <div class="gateway-loop__heading"><span id="gateway-loop-title">AN AGENTIC REQUEST</span><span aria-hidden="true">↻</span></div>
+      <ol class="gateway-loop__steps">
+        <li><span class="gateway-loop__symbol" aria-hidden="true">↗</span><strong>Request</strong><span>Call the model</span></li>
+        <li><span class="gateway-loop__symbol" aria-hidden="true">⌘</span><strong>Tools</strong><span>Run tool calls</span></li>
+        <li><span class="gateway-loop__symbol" aria-hidden="true">↻</span><strong>Continue</strong><span>Return results</span></li>
+        <li><span class="gateway-loop__symbol gateway-loop__symbol--stream" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span><strong>Stream</strong><span>Deliver output</span></li>
+      </ol>
+      <div class="gateway-loop__track" aria-hidden="true"><span></span></div>
+    </div>
+    <p class="gateway-spotlight__note">An illustrative agentic flow; tool calls may repeat. Choose the provider adapters, filters, and integrations your backend supports.</p>
+  </div>
+</section>

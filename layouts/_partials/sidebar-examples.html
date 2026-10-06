@@ -77,7 +77,7 @@
   {{- $extraRoots := where $catalogPages "IsSection" true -}}
   {{- $extraRoots = where $extraRoots "RelPermalink" "ne" $configPath -}}
   {{- $extraExamples := where $catalogPages "IsSection" false -}}
-  {{- $catalogURL := printf "/%s/%s/examples/" $page.Params.product $page.Params.version | relURL -}}
+  {{- $catalogURL := printf "%s/%s/examples/" $page.Params.product $page.Params.version | relURL -}}
   <div id="td-sidebar-menu" class="td-sidebar__inner docs-sidebar examples-sidebar">
     <div class="td-sidebar__search d-flex d-md-none align-items-center justify-content-between">
       <span>Browse examples</span>
@@ -91,7 +91,7 @@
         <li class="examples-sidebar__top-link{{ if eq $page.RelPermalink .RelPermalink }} active{{ else if strings.HasPrefix $page.RelPermalink .RelPermalink }} active-path{{ end }}"><a href="{{ .RelPermalink }}"{{ if eq $page.RelPermalink .RelPermalink }} aria-current="page"{{ end }}>All configurations</a></li>
         {{- end }}
         {{- end }}
-        <li class="examples-sidebar__top-link"><a href="{{ printf "/%s/%s/" $product $version | relURL }}">Back to documentation</a></li>
+        <li class="examples-sidebar__top-link"><a href="{{ printf "%s/%s/" $product $version | relURL }}">Back to documentation</a></li>
         <li class="examples-sidebar__category-browser">
           <details open>
             <summary>Browse categories</summary>

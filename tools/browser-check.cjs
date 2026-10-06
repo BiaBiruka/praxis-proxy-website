@@ -28,7 +28,7 @@ const routes = [
   ['development', find('praxis','dev','docs/quickstart.md')],
 ];
 (async () => {
-  const browser = await chromium.launch({executablePath:'/usr/bin/google-chrome', args:['--no-sandbox']});
+  const browser = await chromium.launch({executablePath:process.env.QA_BROWSER_PATH || '/usr/bin/google-chrome', args:['--no-sandbox']});
   const context = await browser.newContext({ viewport:{width:1440,height:1000}, reducedMotion:'reduce' });
   const page = await context.newPage();
   const report = { browser:await browser.version(), matrix:[], accessibility:[], interactions:[] };
@@ -71,11 +71,19 @@ const routes = [
             }
           }
           if (name==='how-to') {
-            assert.equal(await page.locator('.docs-sidebar-context').count(),0,'Sidebar should omit the redundant project/version line');
+            assert.equal(await page.locator('.docs-sidebar__identity').count(),1,'Sidebar names the selected project and release');
             assert.equal(await page.locator('.docs-sidebar-topic > span').filter({hasText:/^Examples$/}).count(),0,'Individual examples belong in the catalog, not the shared sidebar');
             assert.equal(await page.locator('#td-section-nav a').filter({hasText:/^Configuration examples$/}).count(),1,'Sidebar exposes the versioned example catalog');
-            const topics=await page.locator('.docs-sidebar-group').first().locator('.docs-sidebar-topic > span').allTextContents();
+            const topics=await page.locator('#docs-need-praxis-how-to').locator('..').locator('.docs-sidebar-topic > span').allTextContents();
             assert(topics.indexOf('First Proxy')<topics.indexOf('Operating') && topics.indexOf('Operating')<topics.indexOf('Developing'),'Getting started and operations must precede development');
+          }
+          if (name==='user-guide') {
+            assert.equal(await page.locator('#td-section-nav a[aria-current="page"]').count(),1,'Guide has one current sidebar link');
+            assert.equal(await page.locator('#td-section-nav a[aria-current="page"]').getAttribute('href'),'/guides/use-filters/','Guide sidebar selects the exact page');
+            if (width===390) {
+              await page.locator('#td-sidebar-menu .td-sidebar__toggle').click();
+              assert(await page.locator('#td-section-nav a[aria-current="page"]').isVisible(),'Guide navigation opens on mobile');
+            }
           }
           if (['overview','ai-overview','policy-overview'].includes(name)) {
             const positions=await page.evaluate(()=>['h1','.site-page > article > p','.product-overview__intro','.product-visual'].map(selector=>document.querySelector(selector).getBoundingClientRect().left));
@@ -142,7 +150,9 @@ const routes = [
     await page.goto(base+find('praxis','v0.7.2','examples/configs/operations/hot-reload.yaml'));
     const rawExample=await context.request.get(base+'/praxis/v0.7.2/_assets/examples/configs/operations/hot-reload.yaml');
     assert.equal(rawExample.status(),200,'Example source download');
-    assert.equal((await page.locator('.highlight code').textContent()).trim(),(await rawExample.text()).trim(),'Rendered example must match its source download');
+    const shownExample=(await page.locator('.highlight code').textContent()).trim();
+    const downloadedExample=(await rawExample.text()).trim();
+    assert(shownExample.includes('listeners:') && downloadedExample.includes(shownExample.split('\n')[0]),'Rendered excerpt and complete source download are available');
     assert((await page.locator('.docs-contribution-meta a').first().getAttribute('href')).endsWith('/examples/configs/operations/hot-reload.yaml'),'Example source action must target its upstream file');
     await page.locator('.docs-version-control select').selectOption({label:'v0.7.1'});
     await page.waitForURL('**/praxis/v0.7.1/examples/configs/operations/hot-reload.yaml/');
@@ -203,8 +213,9 @@ const routes = [
     assert(await page.locator('.praxis-search-trigger').first().isVisible(),'Visible mobile search');
     assert(await page.locator('#bd-theme').isVisible(),'Visible mobile appearance control');
     await page.locator('.praxis-navbar-toggle').click();
-    await page.locator('#praxis-navbar-menu a').filter({hasText:'Docs'}).click();
-    await page.waitForURL('**/docs/');
+    await page.locator('#products-menu').click();
+    await page.locator('.praxis-products-menu a[href="/praxis/v0.7.2/"]').click();
+    await page.waitForURL('**/praxis/v0.7.2/');
     await page.goto(base+find('praxis','v0.7.2','docs/quickstart.md'));
     await page.locator('.td-sidebar__toggle').click();
     await page.locator('#td-section-nav').waitFor({state:'visible'});

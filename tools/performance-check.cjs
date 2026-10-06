@@ -4,7 +4,7 @@ const fs=require('node:fs');
 const base=process.env.QA_BASE_URL || 'http://127.0.0.1:18131';
 const out=process.env.QA_OUTPUT || '/tmp/praxis-redesign-qa';
 (async()=>{
-  const browser=await chromium.launch({executablePath:'/usr/bin/google-chrome',args:['--no-sandbox']});
+  const browser=await chromium.launch({executablePath:process.env.QA_BROWSER_PATH || '/usr/bin/google-chrome',args:['--no-sandbox']});
   const results=[];
   try {
     for(let i=0;i<3;i++){

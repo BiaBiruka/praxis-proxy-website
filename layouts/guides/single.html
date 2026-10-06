@@ -1,7 +1,10 @@
 {{ define "main" }}
-<div class="container py-5">
-  <article class="td-content mx-auto">
+<article class="td-content praxis-guide">
     <header>
+      {{- if eq .Section "guides" -}}
+        {{- $project := index hugo.Data.docs_build_versions.products "praxis" -}}
+        <p class="praxis-guide__context"><a href="{{ printf "praxis/%s/" $project.default | relURL }}">Praxis documentation</a><span aria-hidden="true">/</span><span>{{ $project.default }} · Guide</span></p>
+      {{- end -}}
       <h1>{{ .Title }}</h1>
       {{ with .Description }}<p class="lead">{{ . }}</p>{{ end }}
     </header>
@@ -16,6 +19,5 @@
     <footer class="mt-5 pt-4 border-top">
       {{ partial "landing-contribution.html" . }}
     </footer>
-  </article>
-</div>
+</article>
 {{ end }}

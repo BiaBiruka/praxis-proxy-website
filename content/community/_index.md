@@ -49,4 +49,4 @@ Grid is an external project in this documentation site. Its official repository 
 
 ## Site history
 
-The original Praxis site published one welcome announcement on June 2, 2026. It introduced the blog and proposed future writing about releases, architecture, custom filters, and benchmarks. Those were planned topics, not an existing article archive. [Read the retained announcement summary]({{< relref "welcome.md" >}}).
+The original Praxis site published one welcome announcement on June 2, 2026. It introduced the blog and proposed future writing about releases, architecture, custom filters, and benchmarks. Those were planned topics, not an existing article archive. [Read the retained announcement summary]({{< relref "../blog/welcome.md" >}}) in the [blog]({{< relref "../blog/_index.md" >}}).

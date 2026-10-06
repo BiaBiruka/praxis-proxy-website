@@ -38,7 +38,7 @@ const attempt = async (label, work) => {
 
 (async () => {
   fs.mkdirSync(output, { recursive: true });
-  browser = await chromium.launch({ executablePath: '/usr/bin/google-chrome', args: ['--no-sandbox'] });
+  browser = await chromium.launch({ executablePath: process.env.QA_BROWSER_PATH || '/usr/bin/google-chrome', args: ['--no-sandbox'] });
   for (const theme of ['light', 'dark']) for (const width of [1440, 390]) {
     const context = await browser.newContext({
       viewport: { width, height: width === 390 ? 844 : 1000 },
@@ -87,7 +87,7 @@ const attempt = async (label, work) => {
             currentInSidebarViewport: !!currentBox && !!nav && currentBox.top >= navBox.top && currentBox.bottom <= navBox.top + nav.clientHeight,
             selectedVersion: version?.selectedOptions[0]?.textContent.trim(),
             selectedVersionPath: version?.value ? new URL(version.value, location.href).pathname : null,
-            examplesCurrent: document.querySelector('.td-navbar a[href="/examples/"]')?.getAttribute('aria-current'),
+            projectCurrent: [...document.querySelectorAll('.praxis-products-menu a[aria-current]')].map(a => ({ path: new URL(a.href).pathname, current: a.getAttribute('aria-current') })),
             crumbCurrent: text(crumbs?.querySelector('[aria-current="page"]')),
             crumbPaths: [...(crumbs?.querySelectorAll('a') || [])].map(a => new URL(a.href).pathname),
             openDetails: nav?.querySelectorAll('details[open]').length || 0,
@@ -127,7 +127,7 @@ const attempt = async (label, work) => {
           assert.equal(state.selectedVersionPath, url, `${name} selected version route`);
           assert(state.selectedVersion.toLowerCase().includes(version === 'dev' ? 'development' : version), `${name} version label`);
           assert.equal(state.crumbCurrent, state.h1, `${name} final breadcrumb/H1`);
-          assert.equal(state.examplesCurrent, 'location', `${name} global Examples context`);
+          assert.deepEqual(state.projectCurrent, [{ path: `/${id}/${defaults[id].default}/`, current: 'location' }], `${name} project docs context`);
           assert(state.crumbPaths.every(href => href === `/${id}/` || !href.startsWith(`/${id}/`) || href.startsWith(`/${id}/${version}/`)), `${name} breadcrumb leaves selected version`);
           const current = page.locator('#td-section-nav a[aria-current="page"]');
           await current.waitFor({ state: 'visible' });
@@ -144,7 +144,7 @@ const attempt = async (label, work) => {
           assert.equal(state.h1, 'Configuration examples', 'Examples hub heading');
           const browseLabels = await page.locator('main a').allTextContents();
           assert(browseLabels.filter(x => /browse all/i.test(x)).every(x => !/\d/.test(x)), 'Examples hub browse labels must not depend on counts');
-          assert.equal(state.examplesCurrent, 'page', 'Examples hub current state');
+          assert.deepEqual(state.projectCurrent, [], 'Cross-project examples hub has no selected project');
         }
         if (width === 390) {
           const toggle = page.locator('#td-sidebar-menu .td-sidebar__toggle');

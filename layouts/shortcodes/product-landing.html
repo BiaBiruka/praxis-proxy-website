@@ -30,7 +30,7 @@
     <a href="{{ "guides/use-filters/" | relURL }}">Configure filters</a>
     <a href="{{ "guides/operate/" | relURL }}">Operate your proxy</a>
     {{- end }}
-    {{- if ne $id "policy" }}<a href="{{ printf "/%s/%s/examples/" $id $product.default | relURL }}">Configuration examples</a>{{ end }}
+    {{- if ne $id "policy" }}<a href="{{ printf "%s/%s/examples/" $id $product.default | relURL }}">Configuration examples</a>{{ end }}
     {{- if $architecturePages -}}
       {{- with index $architecturePages 0 }}<a href="{{ .RelPermalink }}">Understand the architecture</a>{{ end -}}
     {{- end }}
@@ -56,5 +56,5 @@
       {{- end -}}
     {{- end -}}
   </section>
-  <p class="product-links"><a href="{{ $product.repo }}">Source repository</a><a href="{{ $product.issues }}">Report an issue</a><a href="{{ printf "/%s/%s/" $id $product.default | relURL }}">Browse {{ $default.label }} documentation</a></p>
+  <p class="product-links"><a href="{{ $product.repo }}">Source repository</a><a href="{{ $product.issues }}">Report an issue</a><a href="{{ printf "%s/%s/" $id $product.default | relURL }}">Browse {{ $default.label }} documentation</a></p>
 </section>

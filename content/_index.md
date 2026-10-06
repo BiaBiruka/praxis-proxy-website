@@ -1,9 +1,11 @@
 +++
 title = "Praxis ecosystem"
-description = "Run a configurable HTTP reverse proxy or TCP forwarder; add AI gateway and policy capabilities when your system needs them."
+description = "Open source infrastructure for fast request paths, AI workflows, and explicit policy boundaries. Explore Praxis, Praxis AI, and Praxis Policy Engine."
 +++
 
 {{< task-chooser >}}
+
+{{< gateway-spotlight >}}
 
 {{< ecosystem-cards >}}
 
