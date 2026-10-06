@@ -2,16 +2,16 @@
 
 The mapping below covers all 40 public HTML URLs in [`original-site-inventory.json`](original-site-inventory.json). Canonical source pages use the selected product release; root aliases should preserve incoming fragments and accept both the crawled path and its slash variant. Paths that already exist on the new site stay in place.
 
-The old Grid pages are external discovery routes, not imported release docs. The blog contained only one announcement, so its index/archive/tag paths resolve to the community history and its single post resolves to the retained dated summary. Current examples and search pages remain at their existing routes.
+The old Grid pages are external discovery routes, not imported release docs. The blog contains the one retained announcement, so its index and post routes stay in place; archive and tag paths lead back to the blog. The earlier community summary route remains an alias to the post. Current examples and search pages remain at their existing routes.
 
 | Original path | Destination | Treatment |
 | --- | --- | --- |
 | `/` | `/` | Keep the ecosystem homepage. |
-| `/blog` | `/community/#site-history` | Alias to the one-post history. |
-| `/blog/archive` | `/community/#site-history` | Alias to the one-post history. |
-| `/blog/tags` | `/community/#site-history` | Alias to the one-post history. |
-| `/blog/tags/announcement` | `/community/welcome/` | Alias to the original announcement summary. |
-| `/blog/welcome` | `/community/welcome/` | Alias to the original announcement summary. |
+| `/blog` | `/blog/` | Keep the blog index. |
+| `/blog/archive` | `/blog/` | Alias to the one-post blog. |
+| `/blog/tags` | `/blog/` | Alias to the one-post blog. |
+| `/blog/tags/announcement` | `/blog/welcome/` | Alias to the retained announcement. |
+| `/blog/welcome` | `/blog/welcome/` | Keep the retained announcement. |
 | `/docs/architecture/connection-lifecycle` | `/praxis/v0.7.2/architecture/connection-lifecycle/` (`docs/architecture/connection-lifecycle.md`) | Release-resolved page. |
 | `/docs/architecture/crate-layout` | `/praxis/v0.7.2/architecture/crate-layout/` (`docs/architecture/crate-layout.md`) | Release-resolved page. |
 | `/docs/architecture/filter-pipeline` | `/praxis/v0.7.2/architecture/pipeline-concepts/` (`docs/architecture/pipeline-concepts.md`) | Release-resolved pipeline explanation; branch-chain reference remains linked. |

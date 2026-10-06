@@ -8,8 +8,8 @@
 <section class="home-section home-tasks" aria-labelledby="task-chooser-title">
   <div class="home-section__heading">
     <p class="home-section__eyebrow">Choose by task</p>
-    <h2 id="task-chooser-title">What are you trying to do?</h2>
-    <p>Start with the project and guide that fit the work in front of you.</p>
+    <h2 id="task-chooser-title">Build the path you need.</h2>
+    <p>Start with a proxy. Add AI capabilities or policy enforcement as your system grows.</p>
   </div>
   <div class="task-grid">
   {{- range $id := $order -}}
@@ -23,7 +23,7 @@
     <article class="task-card task-card--{{ $id }}">
       <div class="task-card__top">
         <img class="task-card__icon" src="{{ $icon.RelPermalink }}" alt="" width="48" height="48">
-        <h3>{{ index $titles $id }}</h3>
+        <h3><span class="task-card__project">{{ $product.name }}</span>{{ index $titles $id }}</h3>
       </div>
       <p>{{ index $descriptions $id }}</p>
       {{- if $showPrerequisites }}

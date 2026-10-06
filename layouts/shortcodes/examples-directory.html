@@ -14,7 +14,7 @@
       <li><a href="{{ .RelPermalink }}">{{ $task }}</a>{{ with .Description }}<p>{{ . }}</p>{{ end }}</li>
       {{- end -}}
     </ul>
-    <p><a href="{{ printf "/%s/%s/examples/" $id $project.default | relURL }}">Browse all examples</a></p>
+    <p><a href="{{ printf "%s/%s/examples/" $id $project.default | relURL }}">Browse all examples</a></p>
     {{- else -}}
     <p>Start with the policy quickstart and its included authorization and redaction scenario.</p>
     {{- $start := index (where $pages "Params.source_path" "docs/content/quickstart.md") 0 -}}

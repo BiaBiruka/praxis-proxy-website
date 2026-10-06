@@ -132,11 +132,7 @@ async function checkMobileNavigation() {
   recordPageErrors(page);
   try {
     await openPage(page, 'mobile-navigation', '');
-    const expected = [
-      ['Docs', 'docs/'],
-      ['Examples', 'examples/'],
-      ['Get started', 'start/'],
-    ];
+    const expected = [['Blog', 'blog/'], ['Community', 'community/']];
     for (const [label, route] of expected) {
       await page.goto(url(''));
       await page.locator('.praxis-navbar-toggle').click();
@@ -153,10 +149,10 @@ async function checkMobileNavigation() {
     await page.locator('#products-menu').click();
     const project = page.locator('.praxis-products-menu a').first();
     await project.waitFor({ state: 'visible' });
-    assert.equal(new URL(await project.getAttribute('href'), page.url()).pathname, new URL('praxis/', base).pathname, 'Praxis project nav href');
+    assert.equal(new URL(await project.getAttribute('href'), page.url()).pathname, new URL('praxis/v0.7.2/', base).pathname, 'Praxis docs nav href');
     await project.click();
-    await page.waitForURL(url('praxis/'));
-    report.interactions.push('Mobile menu links reach Docs, Examples, Get started, and Praxis.');
+    await page.waitForURL(url('praxis/v0.7.2/'));
+    report.interactions.push('Mobile menu reaches Blog, Community, and the selected Praxis documentation.');
   } finally {
     await context.close();
   }
@@ -313,7 +309,7 @@ async function checkWalkthrough() {
   report.baseURL = base.href;
   report.widths = widths;
   report.themes = themes;
-  browser = await chromium.launch({ executablePath: '/usr/bin/google-chrome', args: ['--no-sandbox'] });
+  browser = await chromium.launch({ executablePath: process.env.QA_BROWSER_PATH || '/usr/bin/google-chrome', args: ['--no-sandbox'] });
   report.browser = await browser.version();
   try {
     await checkResponsivePages();

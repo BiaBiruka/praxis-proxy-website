@@ -1,7 +1,7 @@
 {{- $page := .page -}}
 {{- $mode := .mode -}}
 {{- $queryID := printf "praxis-search-%s-query" $mode -}}
-<form class="praxis-search__form" role="search" aria-label="Search documentation by project, version, and documentation form" action="{{ "/search/" | relURL }}" method="get" data-praxis-search-form data-praxis-search-mode="{{ $mode }}">
+<form class="praxis-search__form" role="search" aria-label="Search documentation by project, version, and documentation form" action="{{ "search/" | relURL }}" method="get" data-praxis-search-form data-praxis-search-mode="{{ $mode }}">
   <label class="praxis-search__query-label" for="{{ $queryID }}">Search</label>
   <div class="praxis-search__query-row">
     <input id="{{ $queryID }}"

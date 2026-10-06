@@ -4,6 +4,9 @@ description = "What the selected Praxis release supports, gates behind build fea
 product = "praxis"
 version = "v0.7.2"
 type = "guides"
+reader_need = "Reference"
+topic = "Capabilities"
+order = 10
 body_class = "product-overview-page"
 +++
 

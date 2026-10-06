@@ -1,4 +1,6 @@
 {{- if partial "chrome-render.html" (dict "page" . "region" "footer") -}}
+{{- $products := hugo.Data.docs_build_versions.products -}}
+{{- $praxis := index $products "praxis" -}}
 <footer class="praxis-footer">
   <div class="praxis-footer__inner">
     <div class="praxis-footer__brand-block">
@@ -11,30 +13,39 @@
     <nav class="praxis-footer__group" aria-label="Projects">
       <h2>Projects</h2>
       <ul>
-        <li><a href="{{ "praxis/" | relURL }}">Praxis</a></li>
-        <li><a href="{{ "ai/" | relURL }}">Praxis AI</a></li>
-        <li><a href="{{ "policy/" | relURL }}">Policy Engine</a></li>
+        {{- range $id := slice "praxis" "ai" "policy" -}}
+          {{- $project := index $products $id -}}
+          <li><a href="{{ printf "%s/%s/" $id $project.default | relURL }}">{{ $project.name }}</a></li>
+        {{- end -}}
       </ul>
     </nav>
     <nav class="praxis-footer__group" aria-label="Documentation">
       <h2>Documentation</h2>
       <ul>
-        <li><a href="{{ "start/" | relURL }}">Get started</a></li>
-        <li><a href="{{ "docs/" | relURL }}">Browse docs</a></li>
-        <li><a href="{{ "examples/" | relURL }}">Examples</a></li>
-        <li><a href="{{ "search/" | relURL }}">Search</a></li>
+        <li><a href="{{ "guides/first-proxy/" | relURL }}">First proxy tutorial</a></li>
+        {{- range $entry := slice (dict "id" "ai" "source" "docs/quickstart.md" "label" "Praxis AI quickstart") (dict "id" "policy" "source" "docs/content/quickstart.md" "label" "Policy quickstart") -}}
+          {{- $project := index $products $entry.id -}}
+          {{- $pages := where (where (where site.RegularPages "Params.product" $entry.id) "Params.version" $project.default) "Params.source_path" $entry.source -}}
+          {{- with index $pages 0 -}}
+          <li><a href="{{ .RelPermalink }}">{{ $entry.label }}</a></li>
+          {{- else -}}
+            {{- errorf "footer: missing %s for %s default release %s" $entry.source $entry.id $project.default -}}
+          {{- end -}}
+        {{- end -}}
+        <li><a href="{{ printf "praxis/%s/examples/" $praxis.default | relURL }}">Praxis examples</a></li>
       </ul>
     </nav>
     <nav class="praxis-footer__group" aria-label="Community and project">
       <h2>Community</h2>
       <ul>
+        <li><a href="{{ "blog/" | relURL }}">Blog</a></li>
         <li><a href="{{ "community/" | relURL }}">Help and contribute</a></li>
         {{- with .Site.Params.github_repo }}<li><a href="{{ . }}">Website repository</a></li>{{ end -}}
         <li><a href="https://github.com/praxis-proxy/enhancements">Ecosystem proposals</a></li>
       </ul>
     </nav>
   </div>
-  <p class="praxis-footer__copyright">© {{ now.Format "2006" }} Praxis contributors. Project documentation remains maintained with each project repository.</p>
+  <p class="praxis-footer__copyright">© {{ now.Format "2006" }} Praxis contributors.</p>
 </footer>
 {{- else -}}
 <div class="td-chrome-placeholder" data-chrome-donor="{{ .Site.Home.RelPermalink }}" data-chrome-region="footer"></div>

@@ -13,7 +13,9 @@
         {{- $matches := where (where (where $sourceMap "product" $productID) "version" .slug) "source_path" $sourcePath -}}
         {{- $fallback := not (gt (len $matches) 0) -}}
         {{- if $fallback -}}{{- $hasFallback = true -}}{{- end -}}
-        <option value="{{ if $fallback }}/{{ $productID }}/{{ .slug }}/{{ else }}{{ (index $matches 0).url }}{{ end }}" data-fallback="{{ $fallback }}"{{ if eq .slug $version }} selected{{ end }}>{{ .label }}{{ if $fallback }} — overview{{ end }}</option>
+        {{- $target := printf "%s/%s/" $productID .slug -}}
+        {{- if not $fallback -}}{{- $target = strings.TrimPrefix "/" (index $matches 0).url -}}{{- end -}}
+        <option value="{{ $target | relURL }}" data-fallback="{{ $fallback }}"{{ if eq .slug $version }} selected{{ end }}>{{ .label }}{{ if $fallback }} — overview{{ end }}</option>
       {{- end -}}
     </select>
   </div>
@@ -32,7 +34,7 @@
     })();
   </script>
   {{- if $page.Params.version_archive }}
-  <aside class="docs-version-banner" role="note">Archived documentation for {{ $page.Params.version_label }}. <a href="/{{ $productID }}/{{ $product.default }}/">View the default release</a>.</aside>
+  <aside class="docs-version-banner" role="note">Archived documentation for {{ $page.Params.version_label }}. <a href="{{ printf "%s/%s/" $productID $product.default | relURL }}">View the default release</a>.</aside>
   {{- else if eq $version "dev" }}
   <aside class="docs-version-banner" role="note">Development documentation at commit {{ $page.Params.source_commit }}{{ if $page.Params.preview_dirty }} (local changes included).{{ else }}.{{ end }} Published software releases are separate.</aside>
   {{- end -}}

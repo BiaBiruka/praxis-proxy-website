@@ -15,7 +15,7 @@
       {{- $pages = first 3 (sort $pages "Params.order") -}}
       {{- if gt (len $pages) 0 -}}
       <section class="docs-need-product" aria-label="{{ $product.name }} {{ $need }} documents">
-        <h3><a href="{{ printf "/%s/" $id | relURL }}">{{ $product.name }}</a></h3>
+        <h3><a href="{{ printf "%s/" $id | relURL }}">{{ $product.name }}</a></h3>
         <ul>
           {{- range $pages -}}
           <li><a href="{{ .RelPermalink }}">{{ .Title }}</a>{{ with .Params.topic }}<span>{{ . }}</span>{{ end }}</li>

@@ -2,6 +2,7 @@
 title = "Choose and configure filters"
 description = "Use Praxis’s built-in filters to change how a proxy handles requests."
 type = "guides"
+weight = 30
 body_class = "guides-page"
 reader_need = "How-to"
 topic = "Configuration"

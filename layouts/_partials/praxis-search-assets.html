@@ -1,5 +1,11 @@
 {{- $site := .Site -}}
 {{- $products := hugo.Data.docs_build_versions.products -}}
+{{- $scopeProduct := .Params.product | default "all" -}}
+{{- $scopeVersion := .Params.version | default "" -}}
+{{- if and (eq .Section "guides") (eq $scopeProduct "all") -}}
+  {{- $scopeProduct = "praxis" -}}
+  {{- $scopeVersion = (index $products "praxis").default -}}
+{{- end -}}
 {{- $template := resources.Get "json/offline-search-index.json" -}}
 {{- $all := $template | resources.ExecuteAsTemplate "search-index/all-defaults.json" (dict "scopeProduct" "all" "scopeVersion" "defaults" "products" $products) -}}
 {{- if hugo.IsProduction -}}{{- $all = $all | fingerprint "md5" -}}{{- end -}}
@@ -24,8 +30,8 @@
 {{- if hugo.IsProduction -}}{{- $search = $search | minify | fingerprint -}}{{- end -}}
 <div class="praxis-search-dialog-wrap" data-praxis-search
   data-praxis-search-manifest-src="{{ $manifest.RelPermalink }}"
-  data-praxis-search-default-product="{{ .Params.product | default "all" }}"
-  data-praxis-search-default-version="{{ .Params.version | default "" }}">
+  data-praxis-search-default-product="{{ $scopeProduct }}"
+  data-praxis-search-default-version="{{ $scopeVersion }}">
   <dialog class="praxis-search-dialog" id="praxis-search-dialog" aria-labelledby="praxis-search-title">
     <div class="praxis-search-dialog__inner">
       <header class="praxis-search-dialog__header">
@@ -33,7 +39,7 @@
         <button type="button" data-praxis-search-close aria-label="Close search">Close</button>
       </header>
       {{ partial "praxis/search-form.html" (dict "page" . "mode" "dialog") }}
-      <footer><a href="{{ "/search/" | relURL }}" data-praxis-search-page>Open full search page</a></footer>
+      <footer><a href="{{ "search/" | relURL }}" data-praxis-search-page>Open full search page</a></footer>
     </div>
   </dialog>
   <dialog class="praxis-diagram-dialog" id="praxis-diagram-dialog" aria-labelledby="praxis-diagram-title">

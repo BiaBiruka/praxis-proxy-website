@@ -1,20 +1,27 @@
 {{ define "main" }}
+{{- $aiDocs := index hugo.Data.docs_build_versions.products "ai" -}}
 <div class="praxis-home">
-  <section class="home-hero" aria-labelledby="home-title">
-    <div class="home-hero__copy">
-      <h1 id="home-title">Run a proxy. Shape your traffic.</h1>
-      <p class="home-hero__lede">Forward HTTP and TCP traffic with Praxis. Configure routing and built-in filters in YAML, connect AI services with Praxis AI, or enforce access with Policy Engine.</p>
-      <div class="home-hero__actions">
-        <a class="btn btn-primary" href="{{ "guides/first-proxy/" | relURL }}">Run your first proxy</a>
-        <a class="btn btn-outline-primary" href="{{ "examples/" | relURL }}">Find a configuration</a>
+  <section class="home-hero home-hero--control" aria-labelledby="home-title" data-motion-scene>
+    <div class="home-hero__topline"><span>PRAXIS / OPEN SOURCE INFRASTRUCTURE</span><span>PROXY · AI · POLICY</span></div>
+    <div class="home-hero__heading">
+      <div class="home-hero__copy">
+        <p class="home-hero__eyebrow"><span aria-hidden="true"></span>Built for the traffic ahead</p>
+        <h1 id="home-title"><span class="home-hero__line">Move fast.</span><span class="home-hero__line"><em>Stay in control.</em></span></h1>
+        <p class="home-hero__lede">A programmable proxy for your services. An AI gateway for your agents. Explicit policies for the boundaries that matter.</p>
+        <div class="home-hero__actions">
+          <a class="btn btn-primary" href="{{ "guides/first-proxy/" | relURL }}">Run your first proxy <span aria-hidden="true">↗</span></a>
+          <a class="btn btn-outline-primary" href="{{ printf "ai/%s/" $aiDocs.default | relURL }}">Explore Praxis AI <span aria-hidden="true">→</span></a>
+        </div>
+        <p class="home-hero__signature">Rust at the core. YAML in your hands.</p>
       </div>
+      {{ partial "hero-network.html" . }}
     </div>
-    <figure class="home-diagram">
-      <div class="home-diagram__scroll">
-        <img src="{{ "images/ecosystem.svg" | relURL }}" alt="Praxis runs HTTP and TCP proxy traffic. Praxis AI builds on it for AI services. Policy Engine is an independent runtime for optional enforcement integrations." width="840" height="360">
-      </div>
-      <figcaption>Choose the components that fit your system. Projects are released independently and do not imply a tested compatibility combination.</figcaption>
-    </figure>
+    <ul class="home-signal-rail" aria-label="Platform capabilities">
+      <li><span class="home-signal-rail__index">01 / SPEED</span><strong>Native Rust execution</strong><span>Configurable pipelines, compiled filters</span></li>
+      <li><span class="home-signal-rail__index">02 / PROXY</span><strong>Your traffic. Your rules.</strong><span>HTTP reverse proxy + TCP forwarding</span></li>
+      <li><span class="home-signal-rail__index">03 / AI</span><strong>Models meet agents</strong><span>Responses, Messages, MCP + A2A</span></li>
+      <li><span class="home-signal-rail__index">04 / SAFETY</span><strong>Boundaries you define</strong><span>Identity, authorization + data controls</span></li>
+    </ul>
   </section>
   {{ .Content }}
   {{ partial "landing-contribution.html" . }}

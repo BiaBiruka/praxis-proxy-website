@@ -17,13 +17,30 @@ class Page(HTMLParser):
         self.canonical = []
         self.task_links = []
         self.robots = []
+        self.nav_stack = []
+        self.main_links = []
+        self.docs_links = []
+        self.docs_current = []
+        self.search_scope = None
         self.feed(text)
 
     def handle_starttag(self, tag, attrs):
         attrs = dict(attrs)
+        if tag == 'nav':
+            self.nav_stack.append(attrs.get('aria-label'))
+        if 'data-praxis-search' in attrs:
+            self.search_scope = (attrs.get('data-praxis-search-default-product'),
+                                 attrs.get('data-praxis-search-default-version'))
         if tag == 'meta' and attrs.get('http-equiv', '').lower() == 'refresh':
             self.redirect = True
-        if tag == 'a' and 'task-card__action' in attrs.get('class', '').split():
+        if tag == 'a' and self.nav_stack:
+            if self.nav_stack[-1] == 'Main navigation':
+                self.main_links.append(attrs.get('href'))
+            if self.nav_stack[-1] == 'Documentation navigation':
+                self.docs_links.append(attrs.get('href'))
+                if attrs.get('aria-current') == 'page':
+                    self.docs_current.append(attrs.get('href'))
+        if tag == 'a' and {'task-card__action', 'project-spotlight__secondary'} & set(attrs.get('class', '').split()):
             self.task_links.append(attrs.get('href'))
         if tag == 'h1':
             self.h1 += 1
@@ -31,6 +48,10 @@ class Page(HTMLParser):
             self.canonical.append(attrs.get('href'))
         if tag == 'meta' and attrs.get('name') == 'robots':
             self.robots.append(attrs.get('content'))
+
+    def handle_endtag(self, tag):
+        if tag == 'nav' and self.nav_stack:
+            self.nav_stack.pop()
 
 
 def main():
@@ -65,6 +86,33 @@ def main():
                       for product, default in defaults.items() if product not in {'praxis', 'ai'}}
     expected_tasks.add('/guides/first-proxy/')
     expected_tasks.add('/ai/container-quickstart/')
+    home = Page((public / 'index.html').read_text())
+    assert {f'/{product}/{default}/' for product, default in defaults.items()} <= set(home.main_links), \
+        'Projects menu must open each selected documentation release'
+    assert not {'/docs/', '/start/', '/examples/'} & set(home.main_links), \
+        'Docs, Get started, and Examples are project navigation, not top-level links'
+    assert '/blog/' in home.main_links, 'Blog must be available in the main navigation'
+    blog = Page((public / 'blog/index.html').read_text())
+    assert not blog.redirect and blog.h1 == 1, 'Blog index must be a real page with one H1'
+    assert '/blog/' in blog.main_links, 'Blog navigation must remain available on the index'
+    post = Page((public / 'blog/welcome/index.html').read_text())
+    assert not post.redirect and post.h1 == 1, 'Retained welcome post must have one H1'
+    assert Page((public / 'community/welcome/index.html').read_text()).redirect, \
+        'Old community summary route must redirect to the blog post'
+    guide = Page((public / 'guides/use-filters/index.html').read_text())
+    assert guide.docs_current == ['/guides/use-filters/'], 'Guide must have one current sidebar link'
+    assert guide.search_scope == ('praxis', defaults['praxis']), 'Guide search must use selected Praxis docs'
+    assert f'/praxis/{defaults["praxis"]}/examples/' in guide.docs_links, \
+        'Guide sidebar must expose the selected Praxis example catalog'
+    capabilities = Page((public / 'praxis/capabilities/index.html').read_text())
+    assert capabilities.docs_current == ['/praxis/capabilities/'], \
+        'Capability reference must have one current sidebar link'
+    config_url = next(x['url'] for x in sources if x['product'] == 'praxis'
+                      and x['version'] == defaults['praxis']
+                      and x['source_path'] == 'docs/operating/configuration.md')
+    config = Page((public / config_url.strip('/') / 'index.html').read_text())
+    assert config.docs_current == [config_url], 'Imported docs must keep exact current sidebar state'
+    assert '/guides/use-filters/' in config.docs_links, 'Imported docs must link back to Praxis guides'
     for route in ('index.html', 'start/index.html'):
         page = Page((public / route).read_text())
         assert set(page.task_links) == expected_tasks, f'{route}: missing task starting guide'

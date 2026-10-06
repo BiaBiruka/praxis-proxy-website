@@ -2,6 +2,7 @@
 title = "Run your first reverse proxy"
 description = "Run Praxis and forward a request through a real HTTP backend."
 type = "guides"
+weight = 10
 body_class = "guides-page"
 reader_need = "Tutorial"
 topic = "First run"

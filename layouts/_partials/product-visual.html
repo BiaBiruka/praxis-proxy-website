@@ -7,11 +7,11 @@
 {{- $sourcePage := index (where $productPages "Params.source_path" (index $sourcePaths $id)) 0 -}}
 {{- $image := "" -}}
 {{- if eq $id "policy" -}}
-  {{- $image = printf "/%s/%s/_assets/docs/images/ppe_overview.svg" $id $product.default | relURL -}}
+  {{- $image = printf "%s/%s/_assets/docs/images/ppe_overview.svg" $id $product.default | relURL -}}
 {{- else -}}
   {{- $image = printf "images/product-%s.svg" $id | relURL -}}
 {{- end -}}
-{{- $target := printf "/%s/%s/" $id $product.default | relURL -}}
+{{- $target := printf "%s/%s/" $id $product.default | relURL -}}
 {{- with $sourcePage }}{{ $target = .RelPermalink }}{{ end -}}
 {{- $height := 250 -}}
 {{- if eq $id "policy" }}{{ $height = 358 }}{{ end -}}

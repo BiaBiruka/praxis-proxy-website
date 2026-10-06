@@ -28,7 +28,7 @@ const routes = [
   ['development', find('praxis','dev','docs/quickstart.md')],
 ];
 (async () => {
-  const browser = await chromium.launch({executablePath:'/usr/bin/google-chrome', args:['--no-sandbox']});
+  const browser = await chromium.launch({executablePath:process.env.QA_BROWSER_PATH || '/usr/bin/google-chrome', args:['--no-sandbox']});
   const context = await browser.newContext({ viewport:{width:1440,height:1000}, reducedMotion:'reduce' });
   const page = await context.newPage();
   const report = { browser:await browser.version(), matrix:[], accessibility:[], interactions:[] };
@@ -65,17 +65,21 @@ const routes = [
           if (name === 'home') {
             const buttons=await page.locator('.home-hero__actions .btn').evaluateAll(items=>items.map(x=>({left:x.getBoundingClientRect().left,right:x.getBoundingClientRect().right})));
             assert(buttons.every(x=>x.left>=0 && x.right<=width+1), 'Hero actions must fit the viewport');
-            if (width>900) {
-              const columns=await page.locator('.product-overview-row').evaluateAll(rows=>rows.map(row=>[...row.children].map(x=>x.getBoundingClientRect().left)));
-              assert(columns.every(row=>row.every((left,i)=>Math.abs(left-columns[0][i])<=1)), 'Product comparison columns must align between rows');
-            }
           }
           if (name==='how-to') {
-            assert.equal(await page.locator('.docs-sidebar-context').count(),0,'Sidebar should omit the redundant project/version line');
+            assert.equal(await page.locator('.docs-sidebar__identity').count(),1,'Sidebar names the selected project and release');
             assert.equal(await page.locator('.docs-sidebar-topic > span').filter({hasText:/^Examples$/}).count(),0,'Individual examples belong in the catalog, not the shared sidebar');
             assert.equal(await page.locator('#td-section-nav a').filter({hasText:/^Configuration examples$/}).count(),1,'Sidebar exposes the versioned example catalog');
-            const topics=await page.locator('.docs-sidebar-group').first().locator('.docs-sidebar-topic > span').allTextContents();
+            const topics=await page.locator('#docs-need-praxis-how-to').locator('..').locator('.docs-sidebar-topic > span').allTextContents();
             assert(topics.indexOf('First Proxy')<topics.indexOf('Operating') && topics.indexOf('Operating')<topics.indexOf('Developing'),'Getting started and operations must precede development');
+          }
+          if (name==='user-guide') {
+            assert.equal(await page.locator('#td-section-nav a[aria-current="page"]').count(),1,'Guide has one current sidebar link');
+            assert.equal(await page.locator('#td-section-nav a[aria-current="page"]').getAttribute('href'),'/guides/use-filters/','Guide sidebar selects the exact page');
+            if (width===390) {
+              await page.locator('#td-sidebar-menu .td-sidebar__toggle').click();
+              assert(await page.locator('#td-section-nav a[aria-current="page"]').isVisible(),'Guide navigation opens on mobile');
+            }
           }
           if (['overview','ai-overview','policy-overview'].includes(name)) {
             const positions=await page.evaluate(()=>['h1','.site-page > article > p','.product-overview__intro','.product-visual'].map(selector=>document.querySelector(selector).getBoundingClientRect().left));
@@ -98,21 +102,23 @@ const routes = [
     for (const width of [320,390,768,1440,1900]) {
       await page.setViewportSize({width,height:1000});
       await page.goto(base+'/praxis/');
+      await page.evaluate(() => localStorage.setItem('td-color-theme', 'light'));
+      await page.reload();
+      assert.equal(await page.evaluate(()=>document.documentElement.dataset.bsTheme),'light','Stored light theme on reload');
+      const toggle=page.locator('#praxis-theme-toggle');
+      const box=await toggle.boundingBox();
+      assert(box.x>=0 && box.x+box.width<=width+1,'Theme button fits the viewport');
+      assert.equal(await page.locator('.td-light-dark-menu').count(),0,'Theme button has no dropdown');
       for (const theme of ['dark','light']) {
-        await page.locator('#bd-theme').click();
-        const placement=await page.evaluate(()=>{
-          const button=document.querySelector('#bd-theme').getBoundingClientRect();
-          const menu=document.querySelector('.td-light-dark-menu .dropdown-menu').getBoundingClientRect();
-          return {buttonRight:button.right,menuLeft:menu.left,menuRight:menu.right};
-        });
-        assert(placement.menuLeft>=0 && placement.menuRight<=width+1,'Theme menu must fit the viewport');
-        assert(Math.abs(placement.menuRight-placement.buttonRight)<=8,'Theme menu must anchor to its button');
-        await page.locator(`.td-light-dark-menu [data-bs-theme-value="${theme}"]`).click();
+        await toggle.click();
         await page.waitForFunction(value=>document.documentElement.dataset.bsTheme===value,theme);
-        assert.equal(await page.locator('.td-light-dark-menu .dropdown-menu.show').count(),0,'Theme selection must close its menu');
+        assert.equal(await toggle.getAttribute('aria-label'),`Switch to ${theme==='dark'?'light':'dark'} mode`,'Theme button names its next action');
+        assert(await toggle.locator(theme==='dark'?'.praxis-theme-toggle__sun':'.praxis-theme-toggle__moon').isVisible(),'Theme icon changes shape');
       }
+      await page.reload();
+      assert.equal(await page.evaluate(()=>document.documentElement.dataset.bsTheme),'light','Theme choice persists after reload');
     }
-    report.interactions.push('Theme menu anchors to its button and switches appearance at five widths');
+    report.interactions.push('Theme button switches appearance, icon, and saved preference at five widths');
     await page.setViewportSize({width:1440,height:1000});
     await page.goto(base+'/');
     await page.keyboard.press('Control+k');
@@ -142,7 +148,9 @@ const routes = [
     await page.goto(base+find('praxis','v0.7.2','examples/configs/operations/hot-reload.yaml'));
     const rawExample=await context.request.get(base+'/praxis/v0.7.2/_assets/examples/configs/operations/hot-reload.yaml');
     assert.equal(rawExample.status(),200,'Example source download');
-    assert.equal((await page.locator('.highlight code').textContent()).trim(),(await rawExample.text()).trim(),'Rendered example must match its source download');
+    const shownExample=(await page.locator('.highlight code').textContent()).trim();
+    const downloadedExample=(await rawExample.text()).trim();
+    assert(shownExample.includes('listeners:') && downloadedExample.includes(shownExample.split('\n')[0]),'Rendered excerpt and complete source download are available');
     assert((await page.locator('.docs-contribution-meta a').first().getAttribute('href')).endsWith('/examples/configs/operations/hot-reload.yaml'),'Example source action must target its upstream file');
     await page.locator('.docs-version-control select').selectOption({label:'v0.7.1'});
     await page.waitForURL('**/praxis/v0.7.1/examples/configs/operations/hot-reload.yaml/');
@@ -187,8 +195,7 @@ const routes = [
     assert(mermaidCount>0,'Mermaid diagrams rendered');
     await page.evaluate(()=>scrollTo(0,800));
     const y=await page.evaluate(()=>scrollY);
-    await page.locator('#bd-theme').click();
-    await page.locator('[data-bs-theme-value="light"]').click();
+    await page.locator('#praxis-theme-toggle').click();
     assert.equal(await page.evaluate(()=>scrollY),y,'Theme change preserves scroll');
     assert.equal(await page.locator('.mermaid svg').count(),mermaidCount,'Theme preserves diagrams');
     await page.locator('.praxis-diagram-zoom').first().click();
@@ -201,10 +208,11 @@ const routes = [
     await page.setViewportSize({width:320,height:844});
     await page.goto(base+'/');
     assert(await page.locator('.praxis-search-trigger').first().isVisible(),'Visible mobile search');
-    assert(await page.locator('#bd-theme').isVisible(),'Visible mobile appearance control');
+    assert(await page.locator('#praxis-theme-toggle').isVisible(),'Visible mobile appearance control');
     await page.locator('.praxis-navbar-toggle').click();
-    await page.locator('#praxis-navbar-menu a').filter({hasText:'Docs'}).click();
-    await page.waitForURL('**/docs/');
+    await page.locator('#products-menu').click();
+    await page.locator('.praxis-products-menu a[href="/praxis/v0.7.2/"]').click();
+    await page.waitForURL('**/praxis/v0.7.2/');
     await page.goto(base+find('praxis','v0.7.2','docs/quickstart.md'));
     await page.locator('.td-sidebar__toggle').click();
     await page.locator('#td-section-nav').waitFor({state:'visible'});

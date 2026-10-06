@@ -4,7 +4,7 @@
 {{- $version := .Get "version" | default $product.default -}}
 {{- $release := index (where $product.versions "slug" $version) 0 -}}
 {{- if not $release }}{{ errorf "docs-asset: unknown %s version %s" $id $version }}{{ end -}}
-{{- $path := printf "/%s/%s/_assets/%s" $id $version $source -}}
+{{- $path := printf "%s/%s/_assets/%s" $id $version $source -}}
 <figure class="guide-figure">
   <div class="guide-figure__scroll" role="region" aria-label="Scrollable diagram" tabindex="0">
     <img src="{{ $path | relURL }}" alt="{{ .Get "alt" }}" width="{{ .Get "width" }}" height="{{ .Get "height" }}" loading="lazy">

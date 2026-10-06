@@ -54,25 +54,5 @@ enableGitInfo = false
   sidebar_menu_foldable = true
   showLightDarkModeMenu = true
 
-[[menus.main]]
-  name = "Praxis"
-  url = "/praxis/"
-  weight = 10
-
-[[menus.main]]
-  name = "Praxis AI"
-  url = "/ai/"
-  weight = 20
-
-[[menus.main]]
-  name = "Policy Engine"
-  url = "/policy/"
-  weight = 30
-
-[[menus.main]]
-  name = "Community"
-  url = "/community/"
-  weight = 40
-
 [params.mermaid]
   version = "11.17.0"

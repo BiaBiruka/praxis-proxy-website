@@ -14,11 +14,17 @@ body_class = "community-page"
 
 <div class="community-grid">
   <section class="community-card">
+    <p class="community-card__eyebrow">01 / SUPPORT</p>
     <h2>Get help</h2>
     <p>Read the project documentation first, then ask questions in its issue tracker.</p>
-    <p><a href="../docs/">Browse documentation</a></p>
+    <ul>
+      <li>{{< docs-link product="praxis" source="docs/README.md" label="Open proxy docs" >}}</li>
+      <li>{{< docs-link product="ai" source="docs/README.md" label="Open AI gateway docs" >}}</li>
+      <li>{{< docs-link product="policy" source="docs/content/index.md" label="Open Policy docs" >}}</li>
+    </ul>
   </section>
   <section class="community-card">
+    <p class="community-card__eyebrow">02 / ISSUES</p>
     <h2>Report an issue</h2>
     <p>Send bugs and project feedback to the repository that owns the behavior.</p>
     <ul>
@@ -28,6 +34,7 @@ body_class = "community-page"
     </ul>
   </section>
   <section class="community-card">
+    <p class="community-card__eyebrow">03 / CONTRIBUTE</p>
     <h2>Contribute</h2>
     <p>Project code, examples, and authoritative documentation live in each project repository.</p>
     <ul>
@@ -37,6 +44,7 @@ body_class = "community-page"
     </ul>
   </section>
   <section class="community-card">
+    <p class="community-card__eyebrow">04 / PROPOSALS</p>
     <h2>Propose an ecosystem change</h2>
     <p>Discuss cross-project proposals and shared ecosystem direction.</p>
     <p><a href="https://github.com/praxis-proxy/enhancements">Open Praxis proposals</a></p>
@@ -46,7 +54,3 @@ body_class = "community-page"
 ## Grid and related projects
 
 Grid is an external project in this documentation site. Its official repository and the unversioned original guide are listed on the [Grid discovery page]({{< relref "../grid/_index.md" >}}); Grid is not a fourth entry in the versioned project catalog.
-
-## Site history
-
-The original Praxis site published one welcome announcement on June 2, 2026. It introduced the blog and proposed future writing about releases, architecture, custom filters, and benchmarks. Those were planned topics, not an existing article archive. [Read the retained announcement summary]({{< relref "welcome.md" >}}).
