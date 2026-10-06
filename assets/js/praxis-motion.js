@@ -33,7 +33,7 @@
 
       const entrances = document.querySelectorAll(
         '.home-section__heading, .task-card, .gateway-spotlight__copy, ' +
-        '.gateway-spotlight__protocols, .product-overview-row, .docs-form-card, ' +
+        '.gateway-spotlight__protocols, .project-spotlight__copy, .project-spotlight__visual, ' +
         '.docs-directory-card, .community-card, .product-journey-group, .praxis-blog-card'
       );
       const seen = new WeakSet();
@@ -82,7 +82,7 @@
 
     if (finePointer.matches) {
       const surfaces = document.querySelectorAll(
-        '[data-motion-tilt], .task-card, .gateway-spotlight__protocols, .docs-directory-card'
+        '[data-motion-tilt], .task-card, .gateway-spotlight__protocols, .project-spotlight__visual, .docs-directory-card'
       );
       surfaces.forEach(surface => {
         const tilt = surface.hasAttribute('data-motion-tilt');

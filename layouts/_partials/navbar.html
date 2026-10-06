@@ -27,7 +27,7 @@
         <span>Search</span>
       </button>
       {{- if $darkMode.showMenu -}}
-      <div class="td-navbar__light-dark-menu">{{ partial "theme-toggler" . }}</div>
+      {{ partial "praxis-theme-toggle.html" . }}
       {{- end -}}
       <button class="navbar-toggler praxis-navbar-toggle" type="button" data-bs-toggle="collapse" data-bs-target="#praxis-navbar-menu" aria-controls="praxis-navbar-menu" aria-expanded="false" aria-label="Toggle main menu">
         <svg aria-hidden="true" viewBox="0 0 24 24" fill="none"><path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
@@ -52,9 +52,6 @@
         </li>
         <li class="nav-item"><a class="nav-link{{ if $blogActive }} active{{ end }}"{{ if $blogActive }} aria-current="{{ if eq $page.RelPermalink $blogURL }}page{{ else }}location{{ end }}"{{ end }} href="{{ $blogURL }}">Blog</a></li>
         <li class="nav-item"><a class="nav-link{{ if $communityActive }} active{{ end }}"{{ if $communityActive }} aria-current="{{ if eq $page.RelPermalink $communityURL }}page{{ else }}location{{ end }}"{{ end }} href="{{ $communityURL }}">Community</a></li>
-        {{- with .Site.Params.github_repo -}}
-        <li class="nav-item"><a class="nav-link praxis-nav-github" href="{{ . }}" target="_blank" rel="noopener">GitHub<span class="visually-hidden"> (opens in a new tab)</span></a></li>
-        {{- end -}}
       </ul>
     </div>
   </div>

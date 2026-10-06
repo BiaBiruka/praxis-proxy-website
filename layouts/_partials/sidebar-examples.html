@@ -84,7 +84,7 @@
       <button class="btn btn-link td-sidebar__toggle" type="button" data-bs-toggle="collapse" data-bs-target="#td-section-nav" aria-controls="td-section-nav" aria-expanded="false" aria-label="Toggle section navigation"></button>
     </div>
     <nav class="td-sidebar-nav collapse foldable-nav examples-sidebar__nav" id="td-section-nav" aria-label="Examples navigation">
-      <ul class="td-sidebar-nav__section pe-md-3 ul-0">
+      <ul class="td-sidebar-nav__section ul-0">
         <li class="examples-sidebar__top-link{{ if $inCatalog }} active{{ end }}"><a href="{{ with $catalog }}{{ .RelPermalink }}{{ else }}{{ $catalogURL }}{{ end }}"{{ if $inCatalog }} aria-current="page"{{ end }}>All examples</a></li>
         {{- with $configRoot }}
         {{- if not $inCatalog }}

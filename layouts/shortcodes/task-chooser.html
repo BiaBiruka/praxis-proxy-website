@@ -23,7 +23,7 @@
     <article class="task-card task-card--{{ $id }}">
       <div class="task-card__top">
         <img class="task-card__icon" src="{{ $icon.RelPermalink }}" alt="" width="48" height="48">
-        <h3>{{ index $titles $id }}</h3>
+        <h3><span class="task-card__project">{{ $product.name }}</span>{{ index $titles $id }}</h3>
       </div>
       <p>{{ index $descriptions $id }}</p>
       {{- if $showPrerequisites }}

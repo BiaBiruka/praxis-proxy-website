@@ -63,23 +63,22 @@
 @media (prefers-reduced-motion: no-preference) {
   html { scroll-behavior: smooth; }
   :where(.btn, .td-navbar .nav-link, .docs-sidebar-item > a, .praxis-footer__group a,
-    .task-card, .docs-form-card, .docs-directory-card, .docs-need-product,
-    .community-card, .product-journey-group, .product-overview-row, .praxis-blog-card,
-    .protocol-row, .home-signal-rail > a) {
+    .task-card, .docs-directory-card, .docs-need-product,
+    .product-journey-group, .praxis-blog-card,
+    .protocol-row) {
     transition: transform 420ms var(--motion-ease), box-shadow 420ms var(--motion-ease),
       border-color var(--motion-quick) ease, background-color var(--motion-quick) ease,
       color var(--motion-quick) ease;
   }
-  .btn > span, .task-card__action > span, .product-overview-row__action > span,
-  .gateway-spotlight__link > span, .home-signal-rail b, .task-card__icon,
-  .product-overview-row__identity img, .navbar-brand__logo {
+  .btn > span, .task-card__action > span,
+  .gateway-spotlight__link > span, .task-card__icon,
+  .navbar-brand__logo {
     display: inline-block;
     transition: transform 500ms var(--motion-ease);
   }
   .btn:hover { transform: translateY(-2px); }
   .btn:active { transform: translateY(0) scale(.98); }
-  .btn:hover > span, .task-card__action:hover > span, .gateway-spotlight__link:hover > span,
-  .product-overview-row__action:hover > span { transform: translate(3px, -2px); }
+  .btn:hover > span, .task-card__action:hover > span, .gateway-spotlight__link:hover > span { transform: translate(3px, -2px); }
   .navbar-brand:hover .navbar-brand__logo { transform: rotate(-7deg) scale(1.08); }
   .td-navbar .nav-link:not(.dropdown-toggle) {
     background-image: linear-gradient(var(--praxis-accent), var(--praxis-accent));
@@ -150,28 +149,12 @@
   .network-policy, .network-ai { animation: praxis-node 7.2s ease-in-out infinite; }
   .network-policy { animation-delay: 600ms; }
   .network-ai { animation-delay: 1.3s; }
-  .home-signal-rail > a {
-    position: relative;
+  .home-signal-rail > li {
     animation: praxis-enter 900ms calc(640ms + var(--rail-order, 0) * 80ms) var(--motion-ease) backwards;
   }
-  .home-signal-rail > a:nth-child(2) { --rail-order: 1; }
-  .home-signal-rail > a:nth-child(3) { --rail-order: 2; }
-  .home-signal-rail > a:nth-child(4) { --rail-order: 3; }
-  .home-signal-rail > a::before {
-    position: absolute;
-    top: -1px;
-    left: 0;
-    right: 0;
-    height: 1px;
-    background: #bcb4ff;
-    content: '';
-    transform: scaleX(0);
-    transform-origin: left;
-    transition: transform 500ms var(--motion-ease);
-  }
-  .home-signal-rail > a:is(:hover, :focus-visible) { background: #bcb4ff06; }
-  .home-signal-rail > a:is(:hover, :focus-visible)::before { transform: scaleX(1); }
-  .home-signal-rail > a:hover b { transform: translate(3px, -3px); }
+  .home-signal-rail > li:nth-child(2) { --rail-order: 1; }
+  .home-signal-rail > li:nth-child(3) { --rail-order: 2; }
+  .home-signal-rail > li:nth-child(4) { --rail-order: 3; }
 
   /* The four beats are a conceptual tool loop, not measured live traffic. */
   .gateway-loop__steps li { --beat: 0s; }
@@ -216,14 +199,12 @@
       color-mix(in srgb, var(--praxis-accent) 7%, transparent), transparent 70%);
   }
   @media (hover: hover) and (pointer: fine) {
-    .task-card:hover, .docs-directory-card:hover, .community-card:hover,
+    .task-card:hover, .docs-directory-card:hover,
     .product-journey-group:hover, .praxis-blog-card:not(.praxis-blog-card--featured):hover {
       transform: translateY(-7px);
       box-shadow: 0 18px 48px color-mix(in srgb, var(--praxis-accent) 9%, transparent);
     }
     .task-card:hover .task-card__icon { transform: translateY(-3px) rotate(-6deg) scale(1.06); }
-    .docs-form-card:hover { transform: translateY(-4px); }
-    .product-overview-row:hover .product-overview-row__identity img { transform: rotate(-5deg) scale(1.06); }
     .protocol-row:hover { transform: translateX(4px); }
   }
 }

@@ -1,4 +1,10 @@
 {{ partial "praxis-search-assets.html" . }}
+{{- $codeBlocks := resources.Get "js/praxis-code-blocks.js" -}}
+{{- if hugo.IsProduction }}{{ $codeBlocks = $codeBlocks | minify | fingerprint }}{{ end -}}
+<script defer src="{{ $codeBlocks.RelPermalink }}"></script>
+{{- $themeToggle := resources.Get "js/praxis-theme-toggle.js" -}}
+{{- if hugo.IsProduction }}{{ $themeToggle = $themeToggle | minify | fingerprint }}{{ end -}}
+<script defer src="{{ $themeToggle.RelPermalink }}"></script>
 {{- $motion := resources.Get "js/praxis-motion.js" -}}
 {{- if hugo.IsProduction }}{{ $motion = $motion | minify | fingerprint }}{{ end -}}
 <script defer src="{{ $motion.RelPermalink }}"></script>

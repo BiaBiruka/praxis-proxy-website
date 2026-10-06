@@ -1,4 +1,5 @@
 {{ define "main" }}
+{{- $aiDocs := index hugo.Data.docs_build_versions.products "ai" -}}
 <div class="praxis-home">
   <section class="home-hero home-hero--control" aria-labelledby="home-title" data-motion-scene>
     <div class="home-hero__topline"><span>PRAXIS / OPEN SOURCE INFRASTRUCTURE</span><span>PROXY · AI · POLICY</span></div>
@@ -9,18 +10,18 @@
         <p class="home-hero__lede">A programmable proxy for your services. An AI gateway for your agents. Explicit policies for the boundaries that matter.</p>
         <div class="home-hero__actions">
           <a class="btn btn-primary" href="{{ "guides/first-proxy/" | relURL }}">Run your first proxy <span aria-hidden="true">↗</span></a>
-          <a class="btn btn-outline-primary" href="{{ "ai/" | relURL }}">Explore Praxis AI <span aria-hidden="true">→</span></a>
+          <a class="btn btn-outline-primary" href="{{ printf "ai/%s/" $aiDocs.default | relURL }}">Explore Praxis AI <span aria-hidden="true">→</span></a>
         </div>
         <p class="home-hero__signature">Rust at the core. YAML in your hands.</p>
       </div>
       {{ partial "hero-network.html" . }}
     </div>
-    <nav class="home-signal-rail" aria-label="Explore platform capabilities">
-      <a href="{{ "praxis/" | relURL }}"><span class="home-signal-rail__index">01 / SPEED</span><strong>Native Rust execution</strong><span>Configurable pipelines, compiled filters <b aria-hidden="true">↗</b></span></a>
-      <a href="{{ "praxis/capabilities/" | relURL }}"><span class="home-signal-rail__index">02 / PROXY</span><strong>Your traffic. Your rules.</strong><span>HTTP reverse proxy + TCP forwarding <b aria-hidden="true">↗</b></span></a>
-      <a href="{{ "ai/" | relURL }}"><span class="home-signal-rail__index">03 / AI</span><strong>Models meet agents</strong><span>Responses, Messages, MCP + A2A <b aria-hidden="true">↗</b></span></a>
-      <a href="{{ "policy/" | relURL }}"><span class="home-signal-rail__index">04 / SAFETY</span><strong>Boundaries you define</strong><span>Identity, authorization + data controls <b aria-hidden="true">↗</b></span></a>
-    </nav>
+    <ul class="home-signal-rail" aria-label="Platform capabilities">
+      <li><span class="home-signal-rail__index">01 / SPEED</span><strong>Native Rust execution</strong><span>Configurable pipelines, compiled filters</span></li>
+      <li><span class="home-signal-rail__index">02 / PROXY</span><strong>Your traffic. Your rules.</strong><span>HTTP reverse proxy + TCP forwarding</span></li>
+      <li><span class="home-signal-rail__index">03 / AI</span><strong>Models meet agents</strong><span>Responses, Messages, MCP + A2A</span></li>
+      <li><span class="home-signal-rail__index">04 / SAFETY</span><strong>Boundaries you define</strong><span>Identity, authorization + data controls</span></li>
+    </ul>
   </section>
   {{ .Content }}
   {{ partial "landing-contribution.html" . }}

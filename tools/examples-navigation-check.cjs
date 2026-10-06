@@ -173,13 +173,12 @@ const attempt = async (label, work) => {
       }
       if (theme === 'light' && width === 1440) {
         await attempt('desktop redirects and journey', async () => {
-        await page.locator('#bd-theme').click();
-        await page.locator('.td-light-dark-menu [data-bs-theme-value="dark"]').click();
+        await page.locator('#praxis-theme-toggle').focus();
+        await page.keyboard.press('Enter');
         await page.waitForFunction(() => document.documentElement.dataset.bsTheme === 'dark');
-        await page.locator('#bd-theme').click();
-        await page.locator('.td-light-dark-menu [data-bs-theme-value="light"]').click();
+        await page.locator('#praxis-theme-toggle').click();
         await page.waitForFunction(() => document.documentElement.dataset.bsTheme === 'light');
-        report.interactions.push('Theme menu switches between light and dark');
+        report.interactions.push('Theme button switches between light and dark with keyboard and pointer');
         for (const id of ['praxis', 'ai']) {
           const expected = `/${id}/${defaults[id].default}/`;
           const response = await page.goto(new URL(`/${id}/latest/`, base).href, { waitUntil: 'domcontentloaded' });

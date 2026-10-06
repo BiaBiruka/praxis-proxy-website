@@ -1,25 +1,35 @@
-<section class="home-section gateway-spotlight" aria-labelledby="gateway-title" data-motion-scene>
-  <div class="gateway-spotlight__copy">
-    <p class="home-section__eyebrow">Built for AI workflows</p>
-    <h2 id="gateway-title">Keep your clients.<br>Choose your backend.</h2>
-    <p>Put Praxis AI between coding agents and inference. Route model traffic, translate supported API formats, and bring tools into the request flow.</p>
-    <p class="gateway-spotlight__clients">Codex <span aria-hidden="true">/</span> Claude Code <span aria-hidden="true">/</span> Your application</p>
-    <a class="gateway-spotlight__link" href="{{ "ai/" | relURL }}">Explore the AI gateway <span aria-hidden="true">↗</span></a>
-  </div>
-  <div class="gateway-spotlight__protocols" aria-label="Praxis AI capability areas">
-    <div class="protocol-row"><span class="protocol-row__number">01</span><div><strong>OpenAI Responses</strong><code>POST /v1/responses</code></div><span class="protocol-row__mark" aria-hidden="true">↗</span></div>
-    <div class="protocol-row"><span class="protocol-row__number">02</span><div><strong>Anthropic Messages</strong><code>POST /v1/messages</code></div><span class="protocol-row__mark" aria-hidden="true">↗</span></div>
-    <div class="protocol-row"><span class="protocol-row__number">03</span><div><strong>Tools &amp; agent workflows</strong><span>MCP routing · A2A · agentic loops</span></div><span class="protocol-row__mark" aria-hidden="true">↗</span></div>
-    <div class="gateway-loop" aria-labelledby="gateway-loop-title">
-      <div class="gateway-loop__heading"><span id="gateway-loop-title">AN AGENTIC REQUEST</span><span aria-hidden="true">↻</span></div>
-      <ol class="gateway-loop__steps">
-        <li><span class="gateway-loop__symbol" aria-hidden="true">↗</span><strong>Request</strong><span>Call the model</span></li>
-        <li><span class="gateway-loop__symbol" aria-hidden="true">⌘</span><strong>Tools</strong><span>Run tool calls</span></li>
-        <li><span class="gateway-loop__symbol" aria-hidden="true">↻</span><strong>Continue</strong><span>Return results</span></li>
-        <li><span class="gateway-loop__symbol gateway-loop__symbol--stream" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span><strong>Stream</strong><span>Deliver output</span></li>
-      </ol>
-      <div class="gateway-loop__track" aria-hidden="true"><span></span></div>
+{{- $docs := index hugo.Data.docs_build_versions.products "ai" -}}
+<section class="home-section project-spotlight project-spotlight--ai" aria-labelledby="gateway-title" data-motion-scene>
+  <div class="project-spotlight__inner">
+    <div class="project-spotlight__copy">
+      <p class="home-section__eyebrow">02 / PRAXIS AI · AGENT WORKFLOWS</p>
+      <h2 id="gateway-title">Your AI.<br><em>In full flow.</em></h2>
+      <p>Bring Codex, Claude Code, or your application to a gateway for supported OpenAI Responses and Anthropic Messages flows. Compose filters for model mapping, conversation state, tool calls, and guardrails around your chosen backends.</p>
+      <div class="project-spotlight__actions">
+        <a class="project-spotlight__link" href="{{ printf "ai/%s/" $docs.default | relURL }}">Explore Praxis AI docs <span aria-hidden="true">↗</span></a>
+        <a class="project-spotlight__secondary" href="{{ "ai/container-quickstart/" | relURL }}">Run Praxis AI <span aria-hidden="true">→</span></a>
+      </div>
     </div>
-    <p class="gateway-spotlight__note">An illustrative agentic flow; tool calls may repeat. Choose the provider adapters, filters, and integrations your backend supports.</p>
+    <div class="project-spotlight__visual project-bento project-bento--ai">
+      <figure class="project-spotlight__feature ai-flow">
+        <div class="project-spotlight__visual-header"><span>ONE GATEWAY</span><span>CLIENTS → BACKENDS</span></div>
+        <ol class="ai-flow__path">
+          <li><small>01 / CLIENTS</small><strong>Codex · Claude Code · apps</strong><span>Send supported API requests</span></li>
+          <li><small>02 / PRAXIS AI</small><strong>Compose the AI filter pipeline</strong><span>Map models · manage state · call tools · apply guardrails</span></li>
+          <li><small>03 / BACKENDS</small><strong>Your models and tools</strong><span>Route to configured providers and integrations</span></li>
+        </ol>
+        <figcaption>Capabilities depend on the filters, build features, and backend integrations you configure.</figcaption>
+      </figure>
+      <div class="project-spotlight__tile ai-flow__api">
+        <span class="project-spotlight__tile-label">INTERFACE / 01</span>
+        <h3>OpenAI Responses</h3>
+        <code>POST /v1/responses</code>
+      </div>
+      <div class="project-spotlight__tile ai-flow__api">
+        <span class="project-spotlight__tile-label">INTERFACE / 02</span>
+        <h3>Anthropic Messages</h3>
+        <code>POST /v1/messages</code>
+      </div>
+    </div>
   </div>
 </section>
